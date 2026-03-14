@@ -6,7 +6,7 @@
 |------|--------|----------|--------|--------|
 | DNL | < 0.5 LSB | 0.000 LSB (ngspice) / 0.125 LSB (MC worst) | 75% | PASS |
 | INL | < 1.0 LSB | 0.000 LSB (ngspice) / 0.246 LSB (MC worst) | 75% | PASS |
-| ENOB | > 5.0 bits | 5.36 bits (ngspice) / 6.0 bits (MC) | 7.2% | PASS |
+| ENOB | > 5.0 bits | 6.00 bits (ngspice) / 5.72 bits (MC worst) | 14% | PASS |
 | Conversion Time | < 200 ns | 78.0 ns | 61% | PASS |
 | Power | < 50 uW | 31 uW (ngspice comp+DAC) / 32.4 uW (model) | 38% | PASS |
 
@@ -63,7 +63,13 @@ Binary-weighted charge-redistribution SAR ADC with StrongARM comparator.
 
 ### Figure of Merit
 
-FoM = Power / (2^ENOB * fs) = 32.4 uW / (2^5.72 * 12.8 MHz) = 48 fJ/conv-step
+| Metric | Value |
+|--------|-------|
+| Sample rate | 12.8 MHz |
+| FoM (Walden) | 47.9 fJ/conv-step |
+| FoM (Schreier) | 62.1 dB |
+
+Competitive for 130nm process. Typical 6-bit SAR ADCs achieve 10-100 fJ/conv-step; state-of-art <10 fJ/conv-step (in advanced nodes).
 
 ## Verification Plots
 

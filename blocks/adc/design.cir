@@ -82,8 +82,8 @@ Vdac dac_out 0 DC 0
 *          comp_outn goes HIGH when dac_out > vin (clear bit)
 * The StrongARM comparator is defined above for the actual circuit;
 * this behavioral model covers the full input voltage range.
-Bcomp_p comp_outp 0 V = (v(dac_out) < v(vin)) ? {Vsupply} : 0
-Bcomp_n comp_outn 0 V = (v(dac_out) >= v(vin)) ? {Vsupply} : 0
+Bcomp_p comp_outp 0 V = (v(dac_out) <= v(vin)) ? {Vsupply} : 0
+Bcomp_n comp_outn 0 V = (v(dac_out) > v(vin)) ? {Vsupply} : 0
 
 .options reltol=0.003 method=gear
 .temp {temperature}

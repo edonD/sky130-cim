@@ -2,8 +2,8 @@
   "measurements": {
     "RESULT_CONVERSION_TIME_NS": 72.9563,
     "RESULT_DNL_LSB": 0.00017777777778049675,
-    "RESULT_INL_LSB": 0.00017273118279499545,
-    "RESULT_ENOB": 5.360111165165815,
+    "RESULT_INL_LSB": 0.0001784372759839068,
+    "RESULT_ENOB": 6.0,
     "RESULT_POWER_UW": 7.602244308807059,
     "corner": "tt",
     "temperature": 24,
@@ -19,16 +19,16 @@
       "unit": "LSB"
     },
     "inl_lsb": {
-      "measured": 0.00017273118279499545,
+      "measured": 0.0001784372759839068,
       "target": "<1.0",
       "met": "True",
       "score": 1.0,
       "unit": "LSB"
     },
     "enob": {
-      "measured": 5.360111165165815,
+      "measured": 6.0,
       "target": ">5.0",
-      "met": "True",
+      "met": true,
       "score": 1.0,
       "unit": "bits"
     },
