@@ -1,0 +1,18 @@
+{
+  "i_read_ua": 28.662300000000002,
+  "i_leak_na": 0.00189122,
+  "on_off_ratio": 15155455.208807014,
+  "snm_mv": 556.8975884662862,
+  "t_read_ns": 0.5,
+  "parameters": {
+    "Wp": 0.55,
+    "Lp": 0.15,
+    "Wn": 0.84,
+    "Ln": 0.15,
+    "Wax": 0.42,
+    "Wrd": 0.42,
+    "Lrd": 1.0
+  },
+  "storage_ok": true,
+  "read_disturb_ok": true
+}
