@@ -14,7 +14,7 @@
 
 * === StrongARM Comparator ===
 .subckt strongarm_comp inp inm outp outn clk vdd vss
-XMtail ntail clk vss vss sky130_fd_pr__nfet_01v8 W=5.014u L=0.15u nf=1
+XMtail ntail clk vss vss sky130_fd_pr__nfet_01v8 W=3.000u L=0.15u nf=1
 XM1 d1 inp ntail vss sky130_fd_pr__nfet_01v8 W=10.798u L=1.880u nf=1
 XM2 d2 inm ntail vss sky130_fd_pr__nfet_01v8 W=10.798u L=1.880u nf=1
 XMr1 d1 clk vdd vdd sky130_fd_pr__pfet_01v8 W=2u L=0.15u nf=1
