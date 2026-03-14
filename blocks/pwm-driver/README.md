@@ -74,6 +74,23 @@ Total: 6 transistors, 3.45 um^2 area, 1.321 uW power.
 
 **T_LSB=5ns**: Centered in 1-10ns spec. Max pulse (75ns) fits in 333ns clock period with 78% margin.
 
+## Robustness Summary
+
+- **PVT corners**: 9/9 pass (worst: SS/-40C, tr=0.215ns, 57% margin)
+- **Monte Carlo (20 runs)**: 3-sigma rise = 0.189ns, pulse width std = 2ps
+- **Supply sensitivity**: Pulse width independent of VDD (tested 1.5-1.8V)
+- **Input edges**: Buffer sharpens 3ns input edges to 0.17ns output
+- **Worst case combined** (SS/-40C, 3ns edges, 200fF load): tr=0.396ns, 21% margin
+
+## Digital Logic Architecture Options
+
+The behavioral PWL source models an ideal counter + comparator. For full transistor-level implementation, two approaches were researched:
+
+1. **Counter + comparator** (~80 transistors): 4 D flip-flops + magnitude comparator. Standard cell synthesis from SKY130 `sky130_fd_sc_hd` library. References: iiitb_pwm_gen repo.
+2. **Delay-line** (~96 transistors): Current-starved inverter chain with code-selectable tap. Simpler timing but more transistors. Reference: IEEE delay-line PWM paper.
+
+The behavioral approach is justified because the buffer chain is the critical analog element that determines CIM accuracy.
+
 ## Known Limitations
 
 1. Digital logic is behavioral (PWL source, not transistor-level counter)
