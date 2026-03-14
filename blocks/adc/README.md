@@ -178,6 +178,28 @@ Comparator supply current measured via ngspice during 6-cycle SAR conversion:
 
 3. **Large comparator (Wcomp_in=50u from proven design)**: Excessive power consumption. Reduced to 10.8u — still provides adequate offset for a 6-bit ADC (LSB = 28 mV >> comparator offset of 3.3 mV).
 
+## CIM Integration Analysis
+
+The ADC correctly digitizes CIM bitline voltages. For a typical CIM array with 20 mV/cell discharge:
+
+| N active cells | V_bl | ADC Code | Ideal Code | Error |
+|---|---|---|---|---|
+| 0 | 1.800 V | 63 | 63 | 0 |
+| 16 | 1.480 V | 52 | 52 | 0 |
+| 32 | 1.160 V | 41 | 41 | 0 |
+| 48 | 0.840 V | 29 | 29 | 0 |
+| 64 | 0.520 V | 18 | 18 | 0 |
+
+- Max digitization error: 0 codes across full CIM range
+- CIM range DNL: 0.108 LSB, INL: 0.141 LSB, ENOB: 6.0 bits
+- ADC LSB (28.1 mV) > cell discharge (20 mV), providing adequate resolution
+
+### Comparator Common-Mode Range
+
+The StrongARM comparator works correctly from VCM=0.5V to 1.6V (verified via ngspice). This covers the full CIM bitline range (0.5V to 1.8V after maximum discharge).
+
+![Comparator CM Range](plots/comparator_cm_range.png)
+
 ## Known Limitations
 
 1. **Capacitor mismatch model is analytical**, not from Monte Carlo SPICE. In silicon, mismatch may differ from the Pelgrom model used here. The 0.125 LSB worst-case DNL from 50 MC trials suggests adequate margin, but post-layout extraction would be needed to confirm.
