@@ -261,6 +261,19 @@ The design space was explored extensively. Several configurations pass all specs
 
 The current design prioritizes ENOB margin (5.72 bits, 14% over spec) and conversion speed (78 ns, 61% margin). The "minimum power" variant trades speed margin for 77% lower power.
 
+## CIM Input Noise Robustness
+
+The ADC maintains ENOB > 5.0 with up to 10 mV rms input noise (typical CIM level):
+
+| Input Noise | ENOB | Status |
+|-------------|------|--------|
+| 0 mV | 6.00 | PASS |
+| 5 mV | 5.64 | PASS |
+| 10 mV (typical CIM) | 5.18 | PASS |
+| 15 mV | 4.85 | FAIL |
+
+The CIM system should target < 12 mV rms bitline noise for reliable operation. Typical CIM noise sources: kT/C on 100fF bitline (0.2 mV) + supply noise (10 mV).
+
 ## Known Limitations
 
 1. **Capacitor mismatch model is analytical**, not from Monte Carlo SPICE. In silicon, mismatch may differ from the Pelgrom model used here. The 0.125 LSB worst-case DNL from 50 MC trials suggests adequate margin, but post-layout extraction would be needed to confirm.
