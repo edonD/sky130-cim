@@ -200,6 +200,14 @@ The StrongARM comparator works correctly from VCM=0.5V to 1.6V (verified via ngs
 
 ![Comparator CM Range](plots/comparator_cm_range.png)
 
+## Parameter Sensitivity Analysis
+
+All parameters tolerate ±20% variation without any spec failure. Only Tsar_ns at -50% (6.1 ns) causes power to exceed 50 uW. DNL/INL and ENOB are insensitive to all parameter variations.
+
+![Sensitivity Analysis](plots/sensitivity_analysis.png)
+
+**Critical parameters**: Tsar_ns (affects power through conversion rate). **Non-critical**: Lcomp_in, Wcomp_latch, Lcomp_latch (no impact on power, minimal impact on ENOB).
+
 ## Known Limitations
 
 1. **Capacitor mismatch model is analytical**, not from Monte Carlo SPICE. In silicon, mismatch may differ from the Pelgrom model used here. The 0.125 LSB worst-case DNL from 50 MC trials suggests adequate margin, but post-layout extraction would be needed to confirm.
