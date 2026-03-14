@@ -1,0 +1,56 @@
+{
+  "name": "SKY130 SRAM-CIM Inference Tile",
+  "description": "64x64 SRAM-based compute-in-memory tile for edge AI inference",
+  "technology": "SkyWater SKY130 130nm CMOS",
+  "supply_v": 1.8,
+  "array_rows": 64,
+  "array_cols": 64,
+  "weight_bits": 1,
+  "input_bits": 4,
+  "output_bits": 6,
+  "blocks": {
+    "bitcell": {
+      "repo": "blocks/bitcell",
+      "parallel": true,
+      "depends_on": []
+    },
+    "adc": {
+      "repo": "blocks/adc",
+      "parallel": true,
+      "depends_on": []
+    },
+    "pwm-driver": {
+      "repo": "blocks/pwm-driver",
+      "parallel": true,
+      "depends_on": []
+    },
+    "array": {
+      "repo": "blocks/array",
+      "parallel": false,
+      "depends_on": ["bitcell", "pwm-driver"]
+    },
+    "integration": {
+      "repo": "blocks/integration",
+      "parallel": false,
+      "depends_on": ["array", "adc"]
+    }
+  },
+  "top_level_specs": {
+    "mvm_accuracy": {
+      "target": ">90%",
+      "description": "Matrix-vector multiply matches numpy within 10% (normalized RMSE)"
+    },
+    "mnist_accuracy": {
+      "target": ">85%",
+      "description": "MNIST digit classification accuracy using binary weights"
+    },
+    "compute_cycle_ns": {
+      "target": "<500",
+      "description": "Time for one complete 64x64 MVM operation"
+    },
+    "power_mw": {
+      "target": "<10",
+      "description": "Average power during active compute"
+    }
+  }
+}

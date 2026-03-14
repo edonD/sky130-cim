@@ -1,0 +1,8 @@
+name,min,max,scale
+Wp,0.42,5,log
+Lp,0.15,1,log
+Wn,0.42,5,log
+Ln,0.15,1,log
+Wax,0.42,3,log
+Wrd,0.42,10,log
+Lrd,0.15,1,log

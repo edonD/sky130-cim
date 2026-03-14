@@ -1,0 +1,36 @@
+{
+  "name": "SKY130 PWM Wordline Driver for CIM",
+  "supply_v": 1.8,
+  "measurements": {
+    "linearity_pct": {
+      "target": "<5",
+      "weight": 30,
+      "unit": "%",
+      "description": "Max deviation of pulse width from ideal linear relationship with input code"
+    },
+    "rise_time_ns": {
+      "target": "<0.5",
+      "weight": 20,
+      "unit": "ns",
+      "description": "Output rise time (10% to 90%) driving 100fF load"
+    },
+    "fall_time_ns": {
+      "target": "<0.5",
+      "weight": 20,
+      "unit": "ns",
+      "description": "Output fall time (90% to 10%) driving 100fF load"
+    },
+    "power_uw": {
+      "target": "<20",
+      "weight": 15,
+      "unit": "µW",
+      "description": "Average power per driver at 3MHz operation"
+    },
+    "t_lsb_ns": {
+      "target": "1-10",
+      "weight": 15,
+      "unit": "ns",
+      "description": "Duration of one LSB pulse width step"
+    }
+  }
+}

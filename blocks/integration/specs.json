@@ -1,0 +1,30 @@
+{
+  "name": "SKY130 CIM Tile — Full Integration",
+  "supply_v": 1.8,
+  "measurements": {
+    "mnist_accuracy_pct": {
+      "target": ">85",
+      "weight": 40,
+      "unit": "%",
+      "description": "MNIST digit classification accuracy with binary weights"
+    },
+    "mvm_accuracy_pct": {
+      "target": ">90",
+      "weight": 30,
+      "unit": "%",
+      "description": "Matrix-vector multiply accuracy (100 - RMSE%) across random test vectors"
+    },
+    "cycle_time_ns": {
+      "target": "<500",
+      "weight": 15,
+      "unit": "ns",
+      "description": "Total time for one 64x64 MVM cycle (precharge + compute + ADC)"
+    },
+    "total_power_mw": {
+      "target": "<10",
+      "weight": 15,
+      "unit": "mW",
+      "description": "Total tile power during active compute"
+    }
+  }
+}

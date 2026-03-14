@@ -1,0 +1,8 @@
+name,min,max,scale
+Cu,10,500,log
+Wcomp_in,10,100,log
+Lcomp_in,0.5,2,log
+Wcomp_latch,0.5,10,log
+Lcomp_latch,0.15,1,log
+Wcomp_tail,5,50,log
+Tsar_ns,5,50,log

@@ -1,0 +1,36 @@
+{
+  "name": "SKY130 6-bit SAR ADC for CIM",
+  "supply_v": 1.8,
+  "measurements": {
+    "dnl_lsb": {
+      "target": "<0.5",
+      "weight": 30,
+      "unit": "LSB",
+      "description": "Differential non-linearity — worst case across all codes"
+    },
+    "inl_lsb": {
+      "target": "<1.0",
+      "weight": 25,
+      "unit": "LSB",
+      "description": "Integral non-linearity — worst case across all codes"
+    },
+    "enob": {
+      "target": ">5.0",
+      "weight": 20,
+      "unit": "bits",
+      "description": "Effective number of bits"
+    },
+    "conversion_time_ns": {
+      "target": "<200",
+      "weight": 15,
+      "unit": "ns",
+      "description": "Time for one complete 6-bit conversion"
+    },
+    "power_uw": {
+      "target": "<50",
+      "weight": 10,
+      "unit": "\u00b5W",
+      "description": "Average power during conversion"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+name,min,max,scale
+Wbuf,0.5,20,log
+Lbuf,0.15,0.5,log
+Nstages,1,4,lin
+Tlsb,1,10,log
+Wlogic,0.5,5,log

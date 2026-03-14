@@ -1,0 +1,5 @@
+name,min,max,scale
+Wpre,0.5,10,log
+Lpre,0.15,0.5,log
+Tpre_ns,2,20,log
+Cbl_extra_ff,0,100,lin

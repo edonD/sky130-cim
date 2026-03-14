@@ -1,0 +1,85 @@
+* SKY130 CIM 8T SRAM Bitcell
+* 6T storage core + 2T decoupled read port for compute-in-memory
+* Parameterized for autonomous optimization
+
+* NOTE: .lib corner is substituted by evaluate.py
+.lib "sky130_models/sky130.lib.spice" {corner}
+
+* Supply
+Vdd vdd 0 DC {Vsupply}
+Vss vss 0 DC 0
+
+* === 6T SRAM Storage Core ===
+
+* Cross-coupled inverter 1 (left): PL + NL
+XMPL q qb vdd vdd sky130_fd_pr__pfet_01v8 W={Wp}u L={Lp}u nf=1
+XMNL q qb vss vss sky130_fd_pr__nfet_01v8 W={Wn}u L={Ln}u nf=1
+
+* Cross-coupled inverter 2 (right): PR + NR
+XMPR qb q vdd vdd sky130_fd_pr__pfet_01v8 W={Wp}u L={Lp}u nf=1
+XMNR qb q vss vss sky130_fd_pr__nfet_01v8 W={Wn}u L={Ln}u nf=1
+
+* Write access transistors (gated by write wordline WWL)
+XMAXL blw wwl q vss sky130_fd_pr__nfet_01v8 W={Wax}u L=0.15u nf=1
+XMAXR blbw wwl qb vss sky130_fd_pr__nfet_01v8 W={Wax}u L=0.15u nf=1
+
+* === 2T Decoupled Read Port (CIM Compute) ===
+* RD1: gate = Q (stored bit), drain = BL, source = mid_rd
+* RD2: gate = WL (wordline/input), drain = mid_rd, source = VSS
+* Current path: BL -> RD1 -> mid_rd -> RD2 -> VSS
+
+XMRD1 bl q mid_rd vss sky130_fd_pr__nfet_01v8 W={Wrd}u L={Lrd}u nf=1
+XMRD2 mid_rd wl vss vss sky130_fd_pr__nfet_01v8 W={Wrd}u L={Lrd}u nf=1
+
+* === Test Bench: Write a 1, then measure read current ===
+
+* Write phase: drive Q=1 (BLW=VDD, BLBW=0, WWL=VDD for 5ns, then off)
+Vblw blw 0 PWL(0 {Vsupply} 5n {Vsupply} 5.1n 0)
+Vblbw blbw 0 PWL(0 0 5n 0 5.1n 0)
+Vwwl wwl 0 PWL(0 {Vsupply} 5n {Vsupply} 5.1n 0)
+
+* Read phase: WL steps high at 10ns, BL precharged to VDD
+Vwl wl 0 PWL(0 0 10n 0 10.1n {Vsupply})
+Vbl bl 0 DC {Vsupply}
+
+* Sense current through Vbl (BL is voltage source, measure its current)
+
+.options reltol=0.003 method=gear
+.temp {temperature}
+
+* === Measurements ===
+.control
+
+* Transient simulation — write then read
+tran 0.05n 30n
+
+* Measure read current at steady state (25ns, well after WL rises at 10ns)
+meas tran i_read find i(Vbl) at=25n
+
+* Measure storage node voltages after write (verify cell holds data)
+meas tran q_val find v(q) at=9n
+meas tran qb_val find v(qb) at=9n
+
+* Measure storage nodes during read (verify no read disturb)
+meas tran q_read find v(q) at=25n
+meas tran qb_read find v(qb) at=25n
+
+* Measure time for read current to reach 90% of steady state
+let i_steady = vec(i(Vbl))[length(vec(i(Vbl)))-1]
+let i_90pct = 0.9 * i_steady
+
+* Rise time of read current after WL goes high
+meas tran t_wl_rise when v(wl)={Vsupply}/2 rise=1
+meas tran t_i90 when i(Vbl)=i_90pct cross=1
+
+echo "RESULT_I_READ $&i_read"
+echo "RESULT_Q_VAL $&q_val"
+echo "RESULT_QB_VAL $&qb_val"
+echo "RESULT_Q_READ $&q_read"
+echo "RESULT_QB_READ $&qb_read"
+echo "RESULT_T_WL_RISE $&t_wl_rise"
+echo "RESULT_T_I90 $&t_i90"
+echo "RESULT_DONE"
+.endc
+
+.end

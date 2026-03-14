@@ -1,0 +1,36 @@
+{
+  "name": "SKY130 CIM SRAM Bitcell",
+  "supply_v": 1.8,
+  "measurements": {
+    "i_read_ua": {
+      "target": ">5",
+      "weight": 30,
+      "unit": "\u00b5A",
+      "description": "Read current through compute port when weight=1 and wordline=VDD"
+    },
+    "i_leak_na": {
+      "target": "<100",
+      "weight": 25,
+      "unit": "nA",
+      "description": "Leakage current through compute port when weight=0 and wordline=VDD"
+    },
+    "on_off_ratio": {
+      "target": ">100",
+      "weight": 20,
+      "unit": "",
+      "description": "I_read / I_leak ratio \u2014 higher is better for compute accuracy"
+    },
+    "snm_mv": {
+      "target": ">100",
+      "weight": 15,
+      "unit": "mV",
+      "description": "Static noise margin \u2014 cell must hold its data reliably"
+    },
+    "t_read_ns": {
+      "target": "<5",
+      "weight": 10,
+      "unit": "ns",
+      "description": "Time for read current to reach 90% of steady state"
+    }
+  }
+}

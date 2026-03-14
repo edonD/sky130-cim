@@ -1,0 +1,136 @@
+* PWM Wordline Driver for CIM
+* Converts 4-bit input code to proportional pulse width on wordline
+*
+* Architecture:
+*   1. Behavioral pulse generator (models digital counter + comparator)
+*   2. Transistor-level buffer chain to drive wordline load
+*
+* Parameters: Wbuf={Wbuf} Lbuf={Lbuf} Nstages={Nstages} Tlsb={Tlsb}n Wlogic={Wlogic}
+
+.lib "sky130_models/sky130.lib.spice" tt
+.param supply=1.8
+.param Wbuf=2 Lbuf=0.15 Nstages=2 Tlsb=5n Wlogic=1
+
+* ============================================================
+* Power supply
+* ============================================================
+Vdd vdd 0 {supply}
+Vss vss 0 0
+
+* ============================================================
+* Clock — 3MHz (period = 333.3ns)
+* ============================================================
+Vclk clk 0 PULSE(0 {supply} 0 0.1n 0.1n 166.55n 333.3n)
+
+* ============================================================
+* 4-bit input code (DC levels for a single test code)
+* Set input_code parameter, then decompose to bits
+* ============================================================
+.param input_code=7
+.param bit0={floor(mod(input_code, 2))}
+.param bit1={floor(mod(input_code/2, 2))}
+.param bit2={floor(mod(input_code/4, 2))}
+.param bit3={floor(mod(input_code/8, 2))}
+
+Vin0 in0 0 {bit0 * supply}
+Vin1 in1 0 {bit1 * supply}
+Vin2 in2 0 {bit2 * supply}
+Vin3 in3 0 {bit3 * supply}
+
+* ============================================================
+* Behavioral PWM pulse generator
+* Models ideal digital counter + magnitude comparator:
+*   Output goes high for (input_code * Tlsb) after each rising clock edge
+*
+* Uses a B-source that generates the correct pulse:
+*   - Triggers on clock rising edge
+*   - Pulse width = input_code * Tlsb
+* ============================================================
+
+* Compute the input code from bit voltages
+Bcode code_v 0 V = (v(in3) > 0.9) * 8 + (v(in2) > 0.9) * 4 + (v(in1) > 0.9) * 2 + (v(in0) > 0.9) * 1
+
+* Generate a ramp that resets on each clock rising edge
+* Ramp goes from 0 to 15*Tlsb over the counter period (16 * Tlsb)
+Bramp ramp 0 V = {supply} * (1 - cos(2 * 3.14159 * time / (16 * Tlsb))) / 2
+
+* Better approach: use PWL for specific input code
+* The behavioral pulse generator creates a pulse of width = input_code * Tlsb
+* synchronized to the clock rising edge
+Bpwm pwm_raw 0 V = {supply} * ((v(clk) > 0.9) & (mod(time, 333.3n) < (v(code_v) * Tlsb)))
+
+* Clean up the PWM signal through a logic-level inverter pair (behavioral)
+Bclean pwm_clean 0 V = if(v(pwm_raw) > 0.9, {supply}, 0)
+
+* ============================================================
+* Transistor-level output buffer chain
+* Progressive sizing: each stage is ~3x the previous
+* Stage 1 uses Wlogic, subsequent stages scale up to Wbuf
+* ============================================================
+
+* --- Buffer Stage 1 ---
+* Inverter 1a (first inversion)
+XMn1a buf_int1 pwm_clean vss vss sky130_fd_pr__nfet_01v8 W={Wlogic}u L={Lbuf}u
+XMp1a buf_int1 pwm_clean vdd vdd sky130_fd_pr__pfet_01v8 W={2*Wlogic}u L={Lbuf}u
+
+* Inverter 1b (restore polarity)
+XMn1b buf_out1 buf_int1 vss vss sky130_fd_pr__nfet_01v8 W={Wlogic}u L={Lbuf}u
+XMp1b buf_out1 buf_int1 vdd vdd sky130_fd_pr__pfet_01v8 W={2*Wlogic}u L={Lbuf}u
+
+* --- Buffer Stage 2 (if Nstages >= 2) ---
+.if (Nstages >= 2)
+XMn2a buf_int2 buf_out1 vss vss sky130_fd_pr__nfet_01v8 W={Wbuf/3}u L={Lbuf}u
+XMp2a buf_int2 buf_out1 vdd vdd sky130_fd_pr__pfet_01v8 W={2*Wbuf/3}u L={Lbuf}u
+XMn2b buf_out2 buf_int2 vss vss sky130_fd_pr__nfet_01v8 W={Wbuf/3}u L={Lbuf}u
+XMp2b buf_out2 buf_int2 vdd vdd sky130_fd_pr__pfet_01v8 W={2*Wbuf/3}u L={Lbuf}u
+.endif
+
+* --- Buffer Stage 3 (if Nstages >= 3) ---
+.if (Nstages >= 3)
+XMn3a buf_int3 buf_out2 vss vss sky130_fd_pr__nfet_01v8 W={Wbuf}u L={Lbuf}u
+XMp3a buf_int3 buf_out2 vdd vdd sky130_fd_pr__pfet_01v8 W={2*Wbuf}u L={Lbuf}u
+XMn3b buf_out3 buf_int3 vss vss sky130_fd_pr__nfet_01v8 W={Wbuf}u L={Lbuf}u
+XMp3b buf_out3 buf_int3 vdd vdd sky130_fd_pr__pfet_01v8 W={2*Wbuf}u L={Lbuf}u
+.endif
+
+* --- Buffer Stage 4 (if Nstages >= 4) ---
+.if (Nstages >= 4)
+XMn4a buf_int4 buf_out3 vss vss sky130_fd_pr__nfet_01v8 W={3*Wbuf}u L={Lbuf}u
+XMp4a buf_int4 buf_out3 vdd vdd sky130_fd_pr__pfet_01v8 W={6*Wbuf}u L={Lbuf}u
+XMn4b buf_out4 buf_int4 vss vss sky130_fd_pr__nfet_01v8 W={3*Wbuf}u L={Lbuf}u
+XMp4b buf_out4 buf_int4 vdd vdd sky130_fd_pr__pfet_01v8 W={6*Wbuf}u L={Lbuf}u
+.endif
+
+* ============================================================
+* Output node selection based on Nstages
+* ============================================================
+.if (Nstages == 1)
+Rwl_sel buf_out1 wl 0.01
+.elseif (Nstages == 2)
+Rwl_sel buf_out2 wl 0.01
+.elseif (Nstages == 3)
+Rwl_sel buf_out3 wl 0.01
+.elseif (Nstages == 4)
+Rwl_sel buf_out4 wl 0.01
+.endif
+
+* ============================================================
+* Wordline load: 100fF (64 bitcell gates)
+* ============================================================
+Cload wl 0 100f
+
+* ============================================================
+* Simulation control
+* ============================================================
+.control
+tran 0.1n 700n
+meas tran pw_rise TRIG v(wl) val=0.9 rise=1 TARG v(wl) val=0.9 fall=1
+meas tran t_rise TRIG v(wl) val=0.18 rise=1 TARG v(wl) val=1.62 rise=1
+meas tran t_fall TRIG v(wl) val=1.62 fall=1 TARG v(wl) val=0.18 fall=1
+meas tran avg_power AVG i(Vdd) from=0 to=333.3n
+let power_uw = -avg_power * 1.8 * 1e6
+print pw_rise t_rise t_fall power_uw
+wrdata pwm_results.txt v(wl) v(pwm_clean) v(clk)
+.endc
+
+.end

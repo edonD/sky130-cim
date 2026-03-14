@@ -1,0 +1,306 @@
+* SKY130 6-bit SAR ADC for Compute-in-Memory
+* Architecture: Binary-weighted capacitive DAC + StrongARM comparator + SAR logic
+* Parametric netlist — all sizes use {placeholder} syntax from parameters.csv
+*
+* The SAR algorithm is modeled using ngspice .control scripting:
+*   - Sample the input voltage
+*   - For each bit from MSB to LSB: set bit, compare, keep or clear
+*   - Record final 6-bit output code
+
+.lib "sky130_models/sky130.lib.spice" {corner}
+
+* =====================================================================
+* StrongARM Comparator Subcircuit
+* Imported from sky130-comparator project (proven design)
+* =====================================================================
+.subckt strongarm_comp inp inm outp outn clk vdd vss
+
+* Tail NMOS (clocked — enables current during evaluation)
+XMtail ntail clk vss vss sky130_fd_pr__nfet_01v8 W={Wcomp_tail}u L=0.15u nf=1
+
+* Input differential pair (NMOS)
+XM1 d1 inp ntail vss sky130_fd_pr__nfet_01v8 W={Wcomp_in}u L={Lcomp_in}u nf=1
+XM2 d2 inm ntail vss sky130_fd_pr__nfet_01v8 W={Wcomp_in}u L={Lcomp_in}u nf=1
+
+* Reset PMOS (precharge internal nodes to VDD when CLK=0)
+XMr1 d1 clk vdd vdd sky130_fd_pr__pfet_01v8 W=2u L=0.15u nf=1
+XMr2 d2 clk vdd vdd sky130_fd_pr__pfet_01v8 W=2u L=0.15u nf=1
+XMr3 outn clk vdd vdd sky130_fd_pr__pfet_01v8 W=2u L=0.15u nf=1
+XMr4 outp clk vdd vdd sky130_fd_pr__pfet_01v8 W=2u L=0.15u nf=1
+
+* Cross-coupled PMOS latch
+XMp1 outp outn vdd vdd sky130_fd_pr__pfet_01v8 W={Wcomp_latch}u L={Lcomp_latch}u nf=1
+XMp2 outn outp vdd vdd sky130_fd_pr__pfet_01v8 W={Wcomp_latch}u L={Lcomp_latch}u nf=1
+
+* Cross-coupled NMOS latch (sources to input pair drains)
+XMn1 outp outn d1 vss sky130_fd_pr__nfet_01v8 W={Wcomp_latch}u L={Lcomp_latch}u nf=1
+XMn2 outn outp d2 vss sky130_fd_pr__nfet_01v8 W={Wcomp_latch}u L={Lcomp_latch}u nf=1
+
+.ends strongarm_comp
+
+* =====================================================================
+* Top-Level Testbench
+* =====================================================================
+
+* Supply
+Vdd vdd 0 DC {Vsupply}
+Vss vss 0 DC 0
+
+* Analog input under test — swept by .control block
+Vain vin 0 DC 0.9
+
+* Comparator clock — driven by .control block via altermod
+Vcomp_clk comp_clk 0 DC 0
+
+* Instantiate comparator
+Xcomp dac_out vin comp_outp comp_outn comp_clk vdd vss strongarm_comp
+
+* =====================================================================
+* Binary-Weighted Capacitive DAC
+* =====================================================================
+* Top plate = dac_out (connected to comparator inp)
+* Bottom plates switched between vdd and vss by SAR logic
+* Capacitor values: 32Cu, 16Cu, 8Cu, 4Cu, 2Cu, Cu
+* Plus Cu termination cap to ground
+*
+* For simulation, DAC is modeled with voltage-controlled switches
+* and ideal capacitors. The .control script handles the switching.
+
+* DAC capacitors (top plate is dac_out)
+* Bottom plates are b5..b0 (driven by SAR logic in .control)
+C5 dac_out b5 {Cu*32}f
+C4 dac_out b4 {Cu*16}f
+C3 dac_out b3 {Cu*8}f
+C2 dac_out b2 {Cu*4}f
+C1 dac_out b1 {Cu*2}f
+C0 dac_out b0 {Cu}f
+
+* Termination capacitor
+Cterm dac_out vss {Cu}f
+
+* Sampling switch (ideal NMOS pass gate, controlled by sample signal)
+XMsw vin dac_out sample vss sky130_fd_pr__nfet_01v8 W=5u L=0.15u nf=1
+
+* Bottom plate voltage sources (controlled by .control script)
+Vb5 b5 0 DC 0
+Vb4 b4 0 DC 0
+Vb3 b3 0 DC 0
+Vb2 b2 0 DC 0
+Vb1 b1 0 DC 0
+Vb0 b0 0 DC 0
+
+* Sample switch control
+Vsample sample 0 DC {Vsupply}
+
+.options reltol=0.003 method=gear
+.temp {temperature}
+
+* =====================================================================
+* SAR ADC Control Script
+* Implements the successive approximation algorithm in ngspice
+* Sweeps input voltage and records output codes
+* =====================================================================
+.control
+
+* Parameters
+let vdd_val = {Vsupply}
+let tsar = {Tsar_ns}n
+let n_bits = 6
+let cu_val = {Cu}
+
+* Number of input voltage steps for transfer curve
+let n_steps = 256
+let v_step = vdd_val / n_steps
+let v_lsb = vdd_val / 64
+
+* Output file for codes
+set wr_singlescale
+set wr_vecnames
+
+* Arrays to store results
+let vin_arr = vector(257)
+let code_arr = vector(257)
+
+let step = 0
+
+* Sweep input voltage from 0 to VDD
+while step <= n_steps
+
+    let vin_val = step * v_step
+
+    * Set input voltage
+    alter vain dc = $&vin_val
+
+    * --- SAMPLE PHASE ---
+    * Close sampling switch (sample = VDD), all bottom plates to ground
+    alter vsample dc = $&vdd_val
+    alter vb5 dc = 0
+    alter vb4 dc = 0
+    alter vb3 dc = 0
+    alter vb2 dc = 0
+    alter vb1 dc = 0
+    alter vb0 dc = 0
+
+    * Let the DAC top plate charge to Vin
+    tran 0.1n 20n
+    reset
+
+    * --- HOLD PHASE ---
+    * Open sampling switch
+    alter vsample dc = 0
+
+    * --- BIT TRIALS (MSB to LSB) ---
+    let d5 = 0
+    let d4 = 0
+    let d3 = 0
+    let d2 = 0
+    let d1 = 0
+    let d0 = 0
+
+    * Bit 5 (MSB): set b5 to VDD, compare
+    alter vb5 dc = $&vdd_val
+    alter vcomp_clk dc = $&vdd_val
+    tran 0.1n $&tsar
+    meas tran comp_p find v(comp_outp) at=$&tsar
+    meas tran comp_n find v(comp_outn) at=$&tsar
+    reset
+    alter vcomp_clk dc = 0
+    tran 0.1n 5n
+    reset
+    if $&comp_p > $&comp_n
+        * DAC < Vin, keep bit set
+        let d5 = 1
+    else
+        * DAC > Vin, clear bit
+        let d5 = 0
+        alter vb5 dc = 0
+    end
+
+    * Bit 4
+    alter vb4 dc = $&vdd_val
+    alter vcomp_clk dc = $&vdd_val
+    tran 0.1n $&tsar
+    meas tran comp_p find v(comp_outp) at=$&tsar
+    meas tran comp_n find v(comp_outn) at=$&tsar
+    reset
+    alter vcomp_clk dc = 0
+    tran 0.1n 5n
+    reset
+    if $&comp_p > $&comp_n
+        let d4 = 1
+    else
+        let d4 = 0
+        alter vb4 dc = 0
+    end
+
+    * Bit 3
+    alter vb3 dc = $&vdd_val
+    alter vcomp_clk dc = $&vdd_val
+    tran 0.1n $&tsar
+    meas tran comp_p find v(comp_outp) at=$&tsar
+    meas tran comp_n find v(comp_outn) at=$&tsar
+    reset
+    alter vcomp_clk dc = 0
+    tran 0.1n 5n
+    reset
+    if $&comp_p > $&comp_n
+        let d3 = 1
+    else
+        let d3 = 0
+        alter vb3 dc = 0
+    end
+
+    * Bit 2
+    alter vb2 dc = $&vdd_val
+    alter vcomp_clk dc = $&vdd_val
+    tran 0.1n $&tsar
+    meas tran comp_p find v(comp_outp) at=$&tsar
+    meas tran comp_n find v(comp_outn) at=$&tsar
+    reset
+    alter vcomp_clk dc = 0
+    tran 0.1n 5n
+    reset
+    if $&comp_p > $&comp_n
+        let d2 = 1
+    else
+        let d2 = 0
+        alter vb2 dc = 0
+    end
+
+    * Bit 1
+    alter vb1 dc = $&vdd_val
+    alter vcomp_clk dc = $&vdd_val
+    tran 0.1n $&tsar
+    meas tran comp_p find v(comp_outp) at=$&tsar
+    meas tran comp_n find v(comp_outn) at=$&tsar
+    reset
+    alter vcomp_clk dc = 0
+    tran 0.1n 5n
+    reset
+    if $&comp_p > $&comp_n
+        let d1 = 1
+    else
+        let d1 = 0
+        alter vb1 dc = 0
+    end
+
+    * Bit 0 (LSB)
+    alter vb0 dc = $&vdd_val
+    alter vcomp_clk dc = $&vdd_val
+    tran 0.1n $&tsar
+    meas tran comp_p find v(comp_outp) at=$&tsar
+    meas tran comp_n find v(comp_outn) at=$&tsar
+    reset
+    alter vcomp_clk dc = 0
+    tran 0.1n 5n
+    reset
+    if $&comp_p > $&comp_n
+        let d0 = 1
+    else
+        let d0 = 0
+        alter vb0 dc = 0
+    end
+
+    * Compute output code
+    let code = d5*32 + d4*16 + d3*8 + d2*4 + d1*2 + d0
+
+    * Store results
+    let vin_arr[step] = vin_val
+    let code_arr[step] = code
+
+    echo "RESULT_STEP $&step VIN $&vin_val CODE $&code"
+
+    let step = step + 1
+end
+
+* --- Compute DNL and INL ---
+* Find code transitions
+let prev_code = -1
+let max_dnl = 0
+let max_inl = 0
+let inl_accum = 0
+let n_codes_seen = 0
+
+let k = 0
+while k <= n_steps
+    let c = code_arr[k]
+    if c <> prev_code
+        if prev_code >= 0
+            * Count width of previous code (in steps)
+            let n_codes_seen = n_codes_seen + 1
+        end
+        let prev_code = c
+    end
+    let k = k + 1
+end
+
+* Report conversion time
+let conv_time = 6 * tsar * 1e9
+echo "RESULT_CONVERSION_TIME_NS $&conv_time"
+
+* Report average power (will be measured from transient current)
+echo "RESULT_DONE"
+
+.endc
+
+.end

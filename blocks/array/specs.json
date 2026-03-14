@@ -1,0 +1,32 @@
+{
+  "name": "SKY130 64x64 CIM Array",
+  "supply_v": 1.8,
+  "array_rows": 64,
+  "array_cols": 64,
+  "measurements": {
+    "mvm_rmse_pct": {
+      "target": "<10",
+      "weight": 40,
+      "unit": "%",
+      "description": "Normalised RMSE of analog MVM result vs numpy calculation, across 10 random test vectors"
+    },
+    "max_error_pct": {
+      "target": "<20",
+      "weight": 25,
+      "unit": "%",
+      "description": "Maximum single-element error in any MVM output"
+    },
+    "compute_time_ns": {
+      "target": "<100",
+      "weight": 20,
+      "unit": "ns",
+      "description": "Time from wordline activation to bitline settling (excluding ADC)"
+    },
+    "power_mw": {
+      "target": "<5",
+      "weight": 15,
+      "unit": "mW",
+      "description": "Array power during one compute cycle"
+    }
+  }
+}
