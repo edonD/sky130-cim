@@ -143,11 +143,27 @@ git add -A && git commit -m '<description>' && git push
 
 ---
 
+---
+
 # Autonomous Experiment Loop
 
 This section defines how the autonomous agent operates. It applies to every block in the CIM project.
 
 **Remember the big picture:** This block is part of a Compute-in-Memory chip that will perform neural network inference in the analog domain. Every design decision, every waveform, every plot should be evaluated through that lens. Ask yourself: "Will this work when 64 of these are wired together on a shared bitline?" or "Will this ADC correctly digitise a signal that came from an analog dot product?" The block in isolation means nothing — it must work in the system.
+
+## You Have Full Freedom — Use It
+
+You are not limited to what's in this repo. You have access to the entire internet and you should use it aggressively:
+
+- **Search the web** for state-of-the-art designs. Look up ISSCC papers, JSSC publications, IEEE Xplore, ResearchGate, university thesis PDFs. Find what the best analog designers in the world have done for this exact type of circuit.
+- **Search for SKY130 examples.** Other people have designed similar circuits on the SKY130 PDK — find their repos on GitHub, read their netlists, learn from their parameter choices.
+- **Look up design techniques.** If you're stuck on offset, search "SRAM bitcell offset reduction techniques." If your ADC has missing codes, search "SAR ADC missing codes root cause." If your comparator is too slow, search "StrongARM comparator speed optimization."
+- **Read textbooks and course notes online.** Razavi, Allen-Holberg, Murmann lecture slides — many are freely available and contain exact design equations you can use.
+- **Find application notes and design guides.** Companies like Analog Devices, TI, and Maxim publish detailed design guides for ADCs, comparators, and memory circuits.
+- **Study the competition.** Search for Mythic AI architecture, IBM analog AI ISSCC papers, academic SRAM-CIM papers from KAIST, MIT, Stanford. Understand what the best CIM designs look like and steal their best ideas.
+- **pip install anything you need.** If a better optimizer exists (optuna, cma, bayesian-optimization), install it. If you need a plotting library, install it. You have full access.
+
+Do whatever you think is necessary to produce the best possible design. There are no restrictions on your research methods. The only constraint is the specs in `specs.json` — everything else is fair game.
 
 ## Setup (do this once at the start)
 
