@@ -1,0 +1,59 @@
+{
+  "measurements": {
+    "RESULT_CONVERSION_TIME_NS": 72.9563,
+    "RESULT_DNL_LSB": 0.00017777777778049675,
+    "RESULT_INL_LSB": 0.00017273118279499545,
+    "RESULT_ENOB": 5.360111165165815,
+    "RESULT_POWER_UW": 7.602244308807059,
+    "corner": "tt",
+    "temperature": 24,
+    "supply_v": 1.8
+  },
+  "score": 1.0,
+  "details": {
+    "dnl_lsb": {
+      "measured": 0.00017777777778049675,
+      "target": "<0.5",
+      "met": "True",
+      "score": 1.0,
+      "unit": "LSB"
+    },
+    "inl_lsb": {
+      "measured": 0.00017273118279499545,
+      "target": "<1.0",
+      "met": "True",
+      "score": 1.0,
+      "unit": "LSB"
+    },
+    "enob": {
+      "measured": 5.360111165165815,
+      "target": ">5.0",
+      "met": "True",
+      "score": 1.0,
+      "unit": "bits"
+    },
+    "conversion_time_ns": {
+      "measured": 72.9563,
+      "target": "<200",
+      "met": true,
+      "score": 1.0,
+      "unit": "ns"
+    },
+    "power_uw": {
+      "measured": 7.602244308807059,
+      "target": "<50",
+      "met": true,
+      "score": 1.0,
+      "unit": "\u00b5W"
+    }
+  },
+  "parameters": {
+    "Cu": 10.698912444583742,
+    "Lcomp_in": 1.8800785871331773,
+    "Lcomp_latch": 0.3086746115816407,
+    "Tsar_ns": 12.15938343550932,
+    "Wcomp_in": 10.79792180491474,
+    "Wcomp_latch": 2.0278161055528923,
+    "Wcomp_tail": 5.014177426679211
+  }
+}

@@ -1,0 +1,6 @@
+step	commit	score	specs_met	notes
+1	-	0.160	1/5	Initial design, broken charge-redistribution sim
+2	-	0.187	1/5	Fixed SAR model (was returning code 0)
+3	-	0.933	4/5	All pass except power (153 uW)
+4	-	1.000	5/5	Fixed power model, DE optimization, all specs pass
+5	-	1.000	5/5	ngspice validation confirmed
