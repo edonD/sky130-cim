@@ -1,0 +1,12 @@
+pwm_code*.cir
+pwm_tb*.cir
+pwm_pwr_*.cir
+pwm_edge_*.cir
+pwm_mc_*.cir
+pwm_sim_*.cir
+pwm_internal.dat
+test_*.cir
+*.dat
+pwm_results.txt
+__pycache__/
+run.log
