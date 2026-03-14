@@ -29,17 +29,25 @@ def load_specs():
         return json.load(f)
 
 def load_parameters():
-    """Load current parameter values from parameters.csv."""
-    params = {}
-    with open(PARAMS_FILE) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            # Use geometric mean of min/max as default
-            lo, hi = float(row["min"]), float(row["max"])
-            if row["scale"] == "log":
-                params[row["name"]] = np.sqrt(lo * hi)
-            else:
-                params[row["name"]] = (lo + hi) / 2
+    """Load current parameter values from best_parameters.csv or defaults."""
+    best_file = "best_parameters.csv"
+    if os.path.exists(best_file):
+        params = {}
+        with open(best_file) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                params[row["name"]] = float(row["value"])
+        if params:
+            return params
+
+    # Default: reasonable starting values
+    params = {
+        "Wbuf": 4.0,
+        "Lbuf": 0.15,
+        "Nstages": 3,
+        "Tlsb": 5.0,
+        "Wlogic": 1.0,
+    }
     return params
 
 def build_netlist(params, input_code, corner="tt", temp=27):
@@ -47,14 +55,59 @@ def build_netlist(params, input_code, corner="tt", temp=27):
     with open(DESIGN_FILE) as f:
         template = f.read()
 
-    # Substitute parameters
     netlist = template
-    for k, v in params.items():
-        netlist = netlist.replace("{" + k + "}", str(v))
+    nstages = int(round(params.get("Nstages", 3)))
+    tlsb_ns = params.get("Tlsb", 5.0)
+    wbuf = params.get("Wbuf", 4)
+    lbuf = params.get("Lbuf", 0.15)
+    wlogic = params.get("Wlogic", 1)
 
-    # Set input code
-    netlist = netlist.replace(".param input_code=7",
-                              f".param input_code={input_code}")
+    # Replace the .param line with actual values
+    import re as _re
+    old_param_line = _re.search(r'\.param\s+Wbuf=.*', netlist)
+    if old_param_line:
+        new_param_line = (f'.param Wbuf={wbuf}u '
+                          f'Lbuf={lbuf}u '
+                          f'Nstages={nstages} '
+                          f'Tlsb={tlsb_ns}n '
+                          f'Wlogic={wlogic}u')
+        netlist = netlist[:old_param_line.start()] + new_param_line + netlist[old_param_line.end():]
+
+    # Generate INVERTED PWL pulse source for the given input code
+    # The 3-inverter chain inverts, so input must be inverted:
+    #   idle = VDD, active pulse = 0V
+    clk_period_ns = 333.3
+    edge_time = 0.1  # ns
+    pwl_points = []
+    supply = SUPPLY
+
+    if input_code == 0:
+        pwl_points = [(0, supply), (700, supply)]
+    else:
+        pulse_width_ns = input_code * tlsb_ns
+        for cycle in range(2):
+            t_start = cycle * clk_period_ns
+            t_fall = t_start + edge_time
+            t_low = t_fall + edge_time
+            t_rise_start = t_fall + pulse_width_ns
+            t_high = t_rise_start + edge_time
+
+            pwl_points.append((t_fall, supply))
+            pwl_points.append((t_low, 0))
+            pwl_points.append((t_rise_start, 0))
+            pwl_points.append((t_high, supply))
+
+    pwl_str = " ".join(f"{t}n {v}" for t, v in pwl_points)
+    # Replace the DC source with PWL
+    netlist = netlist.replace("Vpwm pwm_in 0 DC {supply}",
+                              f"Vpwm pwm_in 0 PWL({pwl_str})")
+
+    # Set input bit DC voltage sources
+    for i in range(4):
+        bit_val = (input_code >> i) & 1
+        v = supply if bit_val else 0
+        netlist = netlist.replace(f"Vin{i} in{i} 0 0",
+                                  f"Vin{i} in{i} 0 {v}")
 
     # Set corner
     netlist = netlist.replace('.lib "sky130_models/sky130.lib.spice" tt',
