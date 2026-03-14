@@ -89,18 +89,14 @@ def load_specs(path: str = SPECS_FILE) -> Dict:
 
 def validate_design(template: str, params: List[Dict]) -> List[str]:
     errors = []
-    circuit_lines = []
-    in_control = False
+    # Scan ALL lines (including .control blocks) for placeholders
+    non_comment_lines = []
     for line in template.split("\n"):
         stripped = line.strip()
-        if stripped.lower().startswith(".control"):
-            in_control = True
-        if not in_control and not stripped.startswith("*"):
-            circuit_lines.append(line)
-        if stripped.lower().startswith(".endc"):
-            in_control = False
-    circuit_text = "\n".join(circuit_lines)
-    placeholders = set(re.findall(r'\{(\w+)\}', circuit_text))
+        if not stripped.startswith("*"):
+            non_comment_lines.append(line)
+    full_text = "\n".join(non_comment_lines)
+    placeholders = set(re.findall(r'\{(\w+)\}', full_text))
     param_names = {p["name"] for p in params}
 
     # These are set by the evaluator, not design parameters
