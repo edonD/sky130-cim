@@ -234,6 +234,19 @@ kT/C noise is negligible for this 6-bit ADC. Zero ENOB degradation observed in 2
 
 ![CIM Accuracy Test](plots/cim_accuracy_test.png)
 
+## Alternative Configurations
+
+The design space was explored extensively. Several configurations pass all specs with different power/speed tradeoffs:
+
+| Config | Cu | Win | Tsar | Power | Conv Time | ENOB | Yield |
+|--------|-----|-----|------|-------|-----------|------|-------|
+| **Current (balanced)** | 10.7 fF | 10.8 um | 12.2 ns | 32.4 uW | 78 ns | 5.72 | 100% |
+| Compact | 10.7 fF | 5.0 um | 15 ns | 21.8 uW | 95 ns | 5.22 | 100% |
+| Low power | 10.7 fF | 5.0 um | 25 ns | 10.9 uW | 155 ns | 5.22 | 100% |
+| Minimum power | 5.0 fF | 5.0 um | 30 ns | 7.5 uW | 185 ns | 5.63 | 100% |
+
+The current design prioritizes ENOB margin (5.72 bits, 14% over spec) and conversion speed (78 ns, 61% margin). The "minimum power" variant trades speed margin for 77% lower power.
+
 ## Known Limitations
 
 1. **Capacitor mismatch model is analytical**, not from Monte Carlo SPICE. In silicon, mismatch may differ from the Pelgrom model used here. The 0.125 LSB worst-case DNL from 50 MC trials suggests adequate margin, but post-layout extraction would be needed to confirm.
