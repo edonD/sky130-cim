@@ -113,17 +113,31 @@ Shows the DAC output voltage converging on the input voltage through 6 successiv
 
 ![ADC Timing](plots/adc_timing.png)
 
+### SPICE Waveform with Real StrongARM Comparator
+
+Full SAR conversion simulated in ngspice with the transistor-level StrongARM comparator. Shows proper reset/evaluate cycles, comparator resolution, and DAC voltage convergence.
+
+![SPICE SAR Waveform](plots/sar_spice_waveform.png)
+
 ### Transfer Curve (Zoomed)
 
 Zoomed view showing individual code steps clearly.
 
 ![Transfer Curve Zoomed](plots/transfer_curve_zoomed.png)
 
-### Monte Carlo DNL/INL/ENOB Distribution
-
-50 Monte Carlo trials with random capacitor mismatch. All trials pass specs with margin.
+### Monte Carlo Distribution (50 trials)
 
 ![Monte Carlo](plots/monte_carlo_distribution.png)
+
+### 1000-Trial Yield Analysis
+
+CDF plots of DNL, INL, and ENOB across 1000 MC trials with both capacitor mismatch and comparator offset. Overall yield: 100.0%.
+
+![Yield Analysis](plots/yield_analysis_1000.png)
+
+### Design Summary
+
+![Design Summary](plots/design_summary.png)
 
 ## Simulation Methodology
 
