@@ -13,7 +13,7 @@
 
 .lib "sky130_models/sky130.lib.spice" tt
 .param supply=1.8
-.param Wbuf=4.0u Lbuf=0.15u Nstages=3 Tlsb=3.0n Wlogic=1.0u
+.param Wbuf=4.0u Lbuf=0.15u Nstages=3 Tlsb=5.0n Wlogic=1.0u
 
 * ============================================================
 * Power supply
@@ -40,7 +40,7 @@ Vin3 in3 0 0
 * NOTE: Signal is INVERTED — high=idle, low=active pulse
 * The 3-inverter chain produces a non-inverted output
 * ============================================================
-Vpwm pwm_in 0 PWL(0.1n 1.8 0.2n 0 3.1n 0 3.2n 1.8 333.40000000000003n 1.8 333.50000000000006n 0 336.40000000000003n 0 336.50000000000006n 1.8)
+Vpwm pwm_in 0 PWL(0.1n 1.8 0.2n 0 5.1n 0 5.199999999999999n 1.8 333.40000000000003n 1.8 333.50000000000006n 0 338.40000000000003n 0 338.50000000000006n 1.8)
 
 * ============================================================
 * 3-Inverter Buffer Chain (6 transistors total)

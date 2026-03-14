@@ -13,7 +13,7 @@
 
 .lib "sky130_models/sky130.lib.spice" tt
 .param supply=1.8
-.param Wbuf=4.0u Lbuf=0.15u Nstages=3 Tlsb=3.0n Wlogic=1.0u
+.param Wbuf=4.0u Lbuf=0.15u Nstages=3 Tlsb=5.0n Wlogic=1.0u
 
 * ============================================================
 * Power supply

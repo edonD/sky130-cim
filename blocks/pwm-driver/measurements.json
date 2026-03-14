@@ -1,0 +1,15 @@
+{
+  "linearity_pct": 0.026,
+  "rise_time_ns": 0.148,
+  "fall_time_ns": 0.097,
+  "power_uw": 1.321,
+  "t_lsb_ns": 4.998,
+  "max_pulse_ns": 74.98,
+  "min_pulse_ns": 4.98,
+  "pw_code7_ns": 34.98,
+  "pw_ratio_14_7": 2.001,
+  "transistor_count": 6,
+  "total_area_um2": 3.45,
+  "pvt_worst_rise_ns": 0.215,
+  "pvt_worst_corner": "SS/-40C"
+}
