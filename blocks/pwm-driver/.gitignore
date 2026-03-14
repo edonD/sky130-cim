@@ -4,6 +4,7 @@ pwm_pwr_*.cir
 pwm_edge_*.cir
 pwm_mc_*.cir
 pwm_sim_*.cir
+pwm_load_*.cir
 pwm_internal.dat
 test_*.cir
 *.dat
