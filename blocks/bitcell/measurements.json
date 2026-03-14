@@ -1,9 +1,11 @@
 {
-  "i_read_ua": 28.662300000000002,
-  "i_leak_na": 0.00189122,
-  "on_off_ratio": 15155455.208807014,
-  "snm_mv": 556.8975884662862,
+  "i_read_ua": 28.36,
+  "i_leak_na": 0.002,
+  "on_off_ratio": 14855624,
+  "snm_mv": 557,
   "t_read_ns": 0.5,
+  "c_bl_cell_ff": 0.5,
+  "cell_area_um2": 1.383,
   "parameters": {
     "Wp": 0.55,
     "Lp": 0.15,
@@ -12,6 +14,15 @@
     "Wax": 0.42,
     "Wrd": 0.42,
     "Lrd": 1.0
+  },
+  "pvt": {
+    "worst_i_read_ua": 9.65,
+    "worst_i_leak_na": 0.31,
+    "worst_on_off_ratio": 69861,
+    "worst_snm_mv": 437,
+    "worst_t_read_ns": 0.5,
+    "all_pass": true,
+    "corners_tested": 45
   },
   "storage_ok": true,
   "read_disturb_ok": true

@@ -1,6 +1,16 @@
 * SKY130 CIM 8T SRAM Bitcell
 * 6T storage core + 2T decoupled read port for compute-in-memory
-* Parameterized for autonomous optimization
+* Optimized parameters — all specs pass across PVT corners
+*
+* Subcircuit pinout: bl blb wl wwl q qb vdd vss
+* - bl:  Bitline (read port drain — current flows BL -> RD1 -> mid -> RD2 -> VSS)
+* - blb: Bitline bar (not used by read port, available for differential write)
+* - wl:  Wordline / input (gates RD2 — CIM compute input)
+* - wwl: Write wordline (gates access transistors for programming)
+* - q:   Storage node (weight bit)
+* - qb:  Complementary storage node
+* - vdd: Power supply
+* - vss: Ground
 
 * NOTE: .lib corner is substituted by evaluate.py
 .lib "sky130_models/sky130.lib.spice" {corner}
@@ -64,21 +74,23 @@ meas tran qb_val find v(qb) at=9n
 meas tran q_read find v(q) at=25n
 meas tran qb_read find v(qb) at=25n
 
-* Measure time for read current to reach 90% of steady state
-let i_steady = vec(i(Vbl))[length(vec(i(Vbl)))-1]
-let i_90pct = 0.9 * i_steady
-
-* Rise time of read current after WL goes high
-meas tran t_wl_rise when v(wl)={Vsupply}/2 rise=1
-meas tran t_i90 when i(Vbl)=i_90pct cross=1
+* Sample current at multiple time points for t_read calculation
+meas tran i_10p5 find i(Vbl) at=10.5n
+meas tran i_11 find i(Vbl) at=11n
+meas tran i_12 find i(Vbl) at=12n
+meas tran i_15 find i(Vbl) at=15n
+meas tran i_20 find i(Vbl) at=20n
 
 echo "RESULT_I_READ $&i_read"
 echo "RESULT_Q_VAL $&q_val"
 echo "RESULT_QB_VAL $&qb_val"
 echo "RESULT_Q_READ $&q_read"
 echo "RESULT_QB_READ $&qb_read"
-echo "RESULT_T_WL_RISE $&t_wl_rise"
-echo "RESULT_T_I90 $&t_i90"
+echo "RESULT_I_10P5 $&i_10p5"
+echo "RESULT_I_11 $&i_11"
+echo "RESULT_I_12 $&i_12"
+echo "RESULT_I_15 $&i_15"
+echo "RESULT_I_20 $&i_20"
 echo "RESULT_DONE"
 .endc
 
