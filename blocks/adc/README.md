@@ -214,6 +214,26 @@ All parameters tolerate ±20% variation without any spec failure. Only Tsar_ns a
 
 **Critical parameters**: Tsar_ns (affects power through conversion rate). **Non-critical**: Lcomp_in, Wcomp_latch, Lcomp_latch (no impact on power, minimal impact on ENOB).
 
+## Noise Analysis
+
+| Metric | Value |
+|--------|-------|
+| Total DAC capacitance | 685 fF |
+| kT/C noise (sigma) | 0.078 mV |
+| LSB | 28.1 mV |
+| Noise / LSB | 0.28% |
+| Noise-limited ENOB | 12.7 bits |
+
+kT/C noise is negligible for this 6-bit ADC. Zero ENOB degradation observed in 200 MC trials with thermal noise.
+
+![Noise Analysis](plots/noise_analysis.png)
+
+## CIM End-to-End Accuracy
+
+100 random dot-product computations (8-cell, 4-bit inputs) were digitized by the ADC with zero code error — 100% accuracy.
+
+![CIM Accuracy Test](plots/cim_accuracy_test.png)
+
 ## Known Limitations
 
 1. **Capacitor mismatch model is analytical**, not from Monte Carlo SPICE. In silicon, mismatch may differ from the Pelgrom model used here. The 0.125 LSB worst-case DNL from 50 MC trials suggests adequate margin, but post-layout extraction would be needed to confirm.
@@ -254,3 +274,7 @@ All parameters tolerate ±20% variation without any spec failure. Only Tsar_ns a
 | 6 | 1.000 | 5/5 | PVT corner analysis: 9/9 corners pass |
 | 7 | 1.000 | 5/5 | Monte Carlo: 300 trials, 100% yield |
 | 8 | 1.000 | 5/5 | ngspice power measurement: 31 uW total |
+| 9 | 1.000 | 5/5 | ENOB fixed to 6.0 (comparator boundary condition) |
+| 10 | 1.000 | 5/5 | Charge redistribution verified vs behavioral model |
+| 11 | 1.000 | 5/5 | CIM end-to-end: 100/100 zero-error accuracy |
+| 12 | 1.000 | 5/5 | Noise analysis: kT/C negligible at 0.078 mV |
