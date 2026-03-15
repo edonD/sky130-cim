@@ -35,6 +35,10 @@ The array is a 64×64 grid of 8T SRAM CIM bitcells. Each cell has a decoupled 2T
 
 ## Waveform Plots
 
+### Compute Cycle Overview
+![Compute Cycle](plots/compute_cycle_overview.png)
+Complete compute cycle showing all phases: precharge (20ns), compute with PWM wordline pulses (75ns), and settle (< 0.1ns). The bitlines discharge proportionally to the weighted sum of inputs — different columns accumulate different dot products. WL pulse widths encode the 4-bit input values (wider = larger input).
+
 ### MVM Scatter Plot (64×8)
 ![MVM Scatter](plots/mvm_scatter.png)
 Simulated vs ideal BL voltage for all 64×8 test outputs (5 vectors, 40 points). Points on the y=x line indicate accurate computation. The extremely tight clustering demonstrates excellent MVM accuracy with the nonlinear model.
