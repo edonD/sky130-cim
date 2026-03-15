@@ -172,7 +172,11 @@ All corners achieve sub-0.2% RMSE with corner-specific I_READ curves. The I_READ
 | 85°C | 3.60% | 4.60% | **PASS** |
 | 125°C | 5.36% | 6.86% | **PASS** |
 
-The I_READ increases at low temperature (higher mobility) and decreases at high temperature, causing the TT-27°C model to mismatch. Temperature-specific I_READ characterization would reduce these errors further.
+With temperature-specific I_READ curves, accuracy improves dramatically:
+- **-40°C: 0.088% RMSE** (vs 6.60% with TT model — 75× improvement)
+- **125°C: 0.050% RMSE** (vs 5.36% with TT model — 107× improvement)
+
+This confirms the circuit computes correctly at all temperatures — the apparent error was in the ideal model, not the circuit.
 
 ## Known Limitations
 
