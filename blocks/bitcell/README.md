@@ -86,6 +86,12 @@ When weight=0, the read current is ~0.002 nA — essentially zero. The long-chan
 
 SNM = 557 mV at nominal corner. The butterfly curve shows healthy, well-separated eyes. The asymmetry between PMOS (0.55um) and NMOS (0.84um) is visible but both eyes are large.
 
+### SNM at PVT Corners
+
+![SNM PVT Corners](plots/snm_pvt_corners.png)
+
+Butterfly curves at three key corners showing the eyes remain large even at worst case. The sf corner (slow PMOS, fast NMOS) shifts the trip point but both eyes maintain >430 mV.
+
 ### TB6: Read Disturb
 
 ![Read Disturb](plots/read_disturb.png)
