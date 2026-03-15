@@ -184,6 +184,13 @@ The tight distributions are because the read port uses minimum width (0.42 um), 
 2. Account for current reduction as BL voltage drops (nonlinear effect)
 3. The ADC input range must match the actual BL discharge range
 
+**Power analysis (64-cell column, 3 MHz compute rate):**
+- Per-cell read power: 51.6 uW (during active computation)
+- Array dynamic power: 0.41 mW (50% average cell activity, 25% duty cycle)
+- Energy per dot product: 123.8 pJ (64-element binary x 4-bit)
+- Energy per MAC: 1.93 pJ/MAC
+- Static leakage: 0.22 nW (negligible)
+
 **Leakage is negligible**: Even at worst PVT corner (0.31 nA at sf/175C/1.98V), 64 cells produce only 20 nA of leakage, causing < 1 uV error on a 100 fF bitline during a 75ns pulse. This is far below any ADC resolution.
 
 ---
