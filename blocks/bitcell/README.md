@@ -208,7 +208,7 @@ The tight distributions are because the read port uses minimum width (0.42 um), 
 - Energy per MAC: 1.93 pJ/MAC
 - Static leakage: 0.22 nW (negligible)
 
-**Leakage is negligible**: Even at worst PVT corner (0.31 nA at sf/175C/1.98V), 64 cells produce only 20 nA of leakage, causing < 1 uV error on a 100 fF bitline during a 75ns pulse. This is far below any ADC resolution.
+**Leakage is negligible**: Even at worst PVT corner (0.31 nA at sf/175C/1.98V), 64 cells produce only 20 nA of leakage. The worst-case leakage error contribution is 0.06 LSB for a 6-bit ADC (64 "off" cells contribute only 5.9% of one LSB). This ensures excellent CIM compute accuracy.
 
 ---
 
