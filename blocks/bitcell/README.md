@@ -142,6 +142,17 @@ The tight distributions are because the read port uses minimum width (0.42 um), 
 
 ---
 
+## Temperature & Voltage Sensitivity
+
+![Sensitivity](plots/sensitivity.png)
+
+- **I_read vs Temperature**: Drops ~49% from -40C to 175C (mobility degradation). Still >5 uA at worst corner.
+- **I_leak vs Temperature**: Increases 37x from -40C to 175C but stays well below 100 nA spec.
+- **I_read vs Supply**: Scales roughly with VDD^2 (strong inversion). At 1.5V: 17 uA.
+- **SNM vs Supply**: Scales approximately with VDD. At 1.5V: 491 mV (still well above 100 mV spec).
+
+---
+
 ## Cell Metrics for Array Integration
 
 | Parameter | Value | Notes |
