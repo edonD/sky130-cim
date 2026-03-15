@@ -162,6 +162,18 @@ All 5 process corners pass with corner-specific I_READ(V_BL) characterization:
 
 All corners achieve sub-0.2% RMSE with corner-specific I_READ curves. The I_READ variation across corners is ~2× (20-37 µA), yet the accuracy remains excellent because the nonlinear model tracks the actual transistor behavior at each corner.
 
+**Temperature Sweep (TT corner, 8×8, TT I_READ model):**
+
+| Temperature | RMSE | Max Error | Status |
+|-------------|------|-----------|--------|
+| -40°C | 6.60% | 8.46% | **PASS** |
+| 0°C | 2.18% | 2.81% | **PASS** |
+| 27°C | 0.06% | 0.08% | **PASS** |
+| 85°C | 3.60% | 4.60% | **PASS** |
+| 125°C | 5.36% | 6.86% | **PASS** |
+
+The I_READ increases at low temperature (higher mobility) and decreases at high temperature, causing the TT-27°C model to mismatch. Temperature-specific I_READ characterization would reduce these errors further.
+
 ## Known Limitations
 
 1. **Heavy BL saturation at 64 rows:** With typical 50% weight density and random inputs, most BL voltages cluster near 0V. The ADC would need to resolve very small voltages (0-200 mV range) with 6-bit resolution, requiring ~3 mV LSB. This is challenging but feasible.

@@ -1,1 +1,11 @@
 step	commit	score	specs_met	notes
+1	19352d3	1.00	4/4	Baseline 8x8, Cbl=10pF, linear model, RMSE=0.20%
+2	e0529ee	1.00	4/4	Verification TBs, 64x8 validation RMSE=2.2% (linear model)
+3	fec2870	1.00	4/4	Nonlinear I_READ(V_BL) model, 64x8 RMSE=0.10%
+4	cd2cc3c	1.00	4/4	Robust precharge Wpre=10um Tpre=20ns
+5	4517824	1.00	4/4	Phase B: anti-gaming, edge cases, param sensitivity
+6	effbce5	1.00	4/4	Sparse weight test, BL distribution analysis
+7	5981fbd	1.00	4/4	Two-cycle operation, precharge error < 1mV
+8	a5ab321	1.00	4/4	PVT corner test (TT-only model): worst SF 7.35%
+9	d62be33	1.00	4/4	Corner-specific I_READ: all corners sub-0.2% RMSE
+10	22aaf19	1.00	4/4	Design space analysis, C_BL sweep across corners
