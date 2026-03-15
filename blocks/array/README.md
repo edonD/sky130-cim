@@ -114,6 +114,10 @@ The BL settles almost instantly after WL drops because the charge is stored on t
 ![BL Distribution](plots/bl_voltage_distribution.png)
 Left: histogram of BL voltages for 64-row array with 50% weight density. Most BLs cluster near 0V (heavy discharge). Right: sim vs ideal correlation showing excellent agreement.
 
+### Two-Cycle Operation
+![Two Cycle](plots/two_cycle_operation.png)
+Two consecutive compute cycles demonstrating correct precharge between cycles. After the first compute (BLs discharge to 1.2-1.6V), the 20ns precharge restores all BLs to within 0.8mV of VDD before the second cycle. Bottom panel zooms into the precharge region.
+
 ### Parameter Sensitivity
 ![Sensitivity](plots/parameter_sensitivity.png)
 Sweeping each parameter individually while holding others at nominal. The design passes specs across the entire parameter space, demonstrating robust margins.
@@ -178,3 +182,5 @@ All anti-gaming checks pass:
 | 3 | 1.00 | 4/4 | 0.10 | 0.16 | Nonlinear I_READ(V_BL) model, 64×8 |
 | 4 | 1.00 | 4/4 | 0.10 | 0.19 | Wpre=10µm, Tpre=20ns for robust precharge |
 | 5 | 1.00 | 4/4 | — | — | Phase B: anti-gaming, edge cases, param sensitivity all pass |
+| 6 | 1.00 | 4/4 | 0.10 | 0.19 | Two-cycle operation verified, precharge < 1mV error |
+| 7 | 1.00 | 4/4 | 0.09 | 0.17 | Robustness test (different random seed), consistent results |
