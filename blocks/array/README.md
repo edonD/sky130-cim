@@ -9,7 +9,8 @@
 | Compute Time | < 100 ns | 76.97 ns | 76.97 ns | 23.0% | **PASS** |
 | Power | < 5 mW | 0.016 mW | 0.001 mW | 99.7% | **PASS** |
 
-*Validated on 64×8 sub-array with 5 random test vectors (seed=123).*
+*Validated on 64×8 sub-array (5 vectors, seed=123) and 64×16 sub-array (1 vector, seed=42).*
+*Full 64×64 simulation exceeds ngspice timeout (4096 cells). Columns are independent, so 64×8/16 results are valid proxies.*
 
 ## Design Parameters
 
@@ -224,3 +225,5 @@ This confirms the circuit computes correctly at all temperatures — the apparen
 | 6 | 1.00 | 4/4 | 0.10 | 0.19 | Two-cycle operation verified, precharge < 1mV error |
 | 7 | 1.00 | 4/4 | 0.09 | 0.17 | Robustness test (different random seed), consistent results |
 | 8 | 1.00 | 4/4 | 0.13 | 0.21 | Corner-specific I_READ curves: all PVT corners pass with 99%+ margin |
+| 9 | 1.00 | 4/4 | 0.05 | 0.06 | Temp-specific I_READ: -40C/125C now sub-0.1% RMSE |
+| 10 | 1.00 | 4/4 | 0.09 | 0.21 | 64×16 validation (1024 cells, 156s), power=0.031mW |
