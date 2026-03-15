@@ -212,6 +212,18 @@ The tight distributions are because the read port uses minimum width (0.42 um), 
 
 ---
 
+## Realistic BL Discharge
+
+![BL Discharge](plots/bl_discharge_realistic.png)
+
+With a 100 fF BL capacitor (device capacitance only), a single active cell discharges the BL from 1.8V to 0V in ~6 ns. This confirms that the array MUST have sufficient BL capacitance (or use current-mode sensing) to keep the voltage step small enough for linear CIM operation.
+
+**Data retention during discharge**: The Q node stays at 1.800V even as BL drops to 0V, confirming the decoupled read port provides zero read disturb.
+
+**Data Retention Voltage**: Cell retains data down to VDD=0.6V (SNM=156 mV). Below 0.5V, data is lost.
+
+---
+
 ## Known Limitations
 
 1. **BL is modeled as voltage source**: The testbench uses a DC voltage source for BL, which provides infinite charge. In a real array, BL would discharge during read, and the read current would decrease as V_BL drops. The array block must account for this.
