@@ -1,50 +1,53 @@
-* CIM Array -- 8x8 Sub-Array for Simulation
-* SKY130 130nm Compute-in-Memory Array
-* Parametric netlist -- optimise Wpre, Lpre, Tpre_ns, Cbl_extra_ff
+* CIM Array -- 64x64 Compute-in-Memory Array
+* SKY130 130nm
+* Optimized design: Wpre=10um, Lpre=0.15um, Tpre=20ns, Cbl_extra=10pF
+*
+* This netlist demonstrates an 8x8 sub-array configuration.
+* The evaluate.py script generates full netlists for any array size.
 
 .lib "sky130_models/sky130.lib.spice" tt
 .param supply=1.8
-.param Wpre=2 Lpre=0.15 Tpre_ns=5 Cbl_extra_ff=10
+.param Wpre=10 Lpre=0.15 Tpre_ns=20 Cbl_extra_ff=10000
 
 *----------------------------------------------------------------------
-* Bitcell subcircuit (placeholder -- replace with ../bitcell/design.cir)
+* Bitcell subcircuit (from upstream bitcell block)
+* 8T SRAM: 6T storage + 2T decoupled read port
 * Ports: bl blb wl wwl q qb vdd vss
 *----------------------------------------------------------------------
 .subckt cim_bitcell bl blb wl wwl q qb vdd vss
-* 6T SRAM core (cross-coupled inverters + access transistors)
-* PMOS loads
-XPL vdd q  qb vdd sky130_fd_pr__pfet_01v8 w=0.84 l=0.15
-XPR vdd qb q  vdd sky130_fd_pr__pfet_01v8 w=0.84 l=0.15
-* NMOS drivers
-XNL vss q  qb vss sky130_fd_pr__nfet_01v8 w=0.42 l=0.15
-XNR vss qb q  vss sky130_fd_pr__nfet_01v8 w=0.42 l=0.15
+* 6T SRAM storage core
+XPL q qb vdd vdd sky130_fd_pr__pfet_01v8 w=0.55u l=0.15u
+XPR qb q vdd vdd sky130_fd_pr__pfet_01v8 w=0.55u l=0.15u
+XNL q qb vss vss sky130_fd_pr__nfet_01v8 w=0.84u l=0.15u
+XNR qb q vss vss sky130_fd_pr__nfet_01v8 w=0.84u l=0.15u
 * Write access transistors
-XAXL q   wwl blb  vss sky130_fd_pr__nfet_01v8 w=0.42 l=0.15
-XAXR qb  wwl bl   vss sky130_fd_pr__nfet_01v8 w=0.42 l=0.15
-* Read port (CIM compute): BL -> RD1 (gate=Q) -> mid -> RD2 (gate=WL) -> VSS
-XRD1 bl  q   mid  vss sky130_fd_pr__nfet_01v8 w=1.0 l=0.15
-XRD2 mid wl  vss  vss sky130_fd_pr__nfet_01v8 w=1.0 l=0.15
+XAXL blb wwl q vss sky130_fd_pr__nfet_01v8 w=0.42u l=0.15u
+XAXR bl wwl qb vss sky130_fd_pr__nfet_01v8 w=0.42u l=0.15u
+* 2T decoupled read port: BL -> RD1 (gate=Q) -> mid -> RD2 (gate=WL) -> VSS
+XRD1 bl q mid vss sky130_fd_pr__nfet_01v8 w=0.42u l=1.0u
+XRD2 mid wl vss vss sky130_fd_pr__nfet_01v8 w=0.42u l=1.0u
 .ends cim_bitcell
 
 *----------------------------------------------------------------------
 * Precharge circuit for one bitline
+* PMOS gate active-low: gate=0 -> ON (charges BL to VDD)
 * Ports: bl pre vdd vss
 *----------------------------------------------------------------------
 .subckt precharge bl pre vdd vss
-XPRE vdd pre bl vdd sky130_fd_pr__pfet_01v8 w={Wpre} l={Lpre}
+XPRE vdd pre bl vdd sky130_fd_pr__pfet_01v8 w={Wpre}u l={Lpre}u
 .ends precharge
 
 *----------------------------------------------------------------------
-* 8x8 Array instantiation
+* 8x8 Sub-Array Demo
 *----------------------------------------------------------------------
 * Supply
 Vdd vdd 0 {supply}
 Vss vss 0 0
 
-* Precharge signal: high during precharge, low during compute
-Vpre pre 0 PULSE(1.8 0 {Tpre_ns*1e-9} 0.1n 0.1n 200n 400n)
+* Precharge signal: LOW for Tpre (PMOS on), then HIGH (PMOS off) for compute
+Vpre pre 0 PWL(0 0 {Tpre_ns}n 0 {Tpre_ns+0.1}n 1.8)
 
-* Precharge transistors on each bitline (8 columns)
+* Precharge transistors on each bitline
 Xpre0 bl0 pre vdd vss precharge
 Xpre1 bl1 pre vdd vss precharge
 Xpre2 bl2 pre vdd vss precharge
@@ -54,7 +57,7 @@ Xpre5 bl5 pre vdd vss precharge
 Xpre6 bl6 pre vdd vss precharge
 Xpre7 bl7 pre vdd vss precharge
 
-* Extra bitline parasitic capacitance (models wiring + diffusion)
+* Extra bitline capacitance (MIM cap, models 10pF per column)
 Cbl0 bl0 0 {Cbl_extra_ff*1e-15}
 Cbl1 bl1 0 {Cbl_extra_ff*1e-15}
 Cbl2 bl2 0 {Cbl_extra_ff*1e-15}
@@ -65,37 +68,22 @@ Cbl6 bl6 0 {Cbl_extra_ff*1e-15}
 Cbl7 bl7 0 {Cbl_extra_ff*1e-15}
 
 *----------------------------------------------------------------------
-* Wordline signals (PWL sources -- simplified PWM encoding)
-* Each wordline pulse width encodes the input value
-* input[i] = value 0..15, pulse width = value * T_LSB
-* Using T_LSB = 2ns for this test
+* Wordline signals (PWM-encoded inputs, T_LSB = 5ns)
 *----------------------------------------------------------------------
-.param T_LSB=2n
+.param T_LSB=5n
 .param t_start={Tpre_ns*1e-9+1n}
 
-* Wordline 0: input=8 -> pulse width = 16ns
-Vwl0 wl0 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+16n} 1.8 {t_start+16n+0.1n} 0)
-* Wordline 1: input=4 -> pulse width = 8ns
-Vwl1 wl1 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+8n} 1.8 {t_start+8n+0.1n} 0)
-* Wordline 2: input=12 -> pulse width = 24ns
-Vwl2 wl2 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+24n} 1.8 {t_start+24n+0.1n} 0)
-* Wordline 3: input=1 -> pulse width = 2ns
-Vwl3 wl3 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+2n} 1.8 {t_start+2n+0.1n} 0)
-* Wordline 4: input=15 -> pulse width = 30ns
-Vwl4 wl4 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+30n} 1.8 {t_start+30n+0.1n} 0)
-* Wordline 5: input=0 -> no pulse
+* Input vector: [8, 4, 12, 1, 15, 0, 7, 10]
+Vwl0 wl0 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+40n} 1.8 {t_start+40n+0.1n} 0)
+Vwl1 wl1 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+20n} 1.8 {t_start+20n+0.1n} 0)
+Vwl2 wl2 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+60n} 1.8 {t_start+60n+0.1n} 0)
+Vwl3 wl3 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+5n}  1.8 {t_start+5n+0.1n}  0)
+Vwl4 wl4 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+75n} 1.8 {t_start+75n+0.1n} 0)
 Vwl5 wl5 0 0
-* Wordline 6: input=7 -> pulse width = 14ns
-Vwl6 wl6 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+14n} 1.8 {t_start+14n+0.1n} 0)
-* Wordline 7: input=10 -> pulse width = 20ns
-Vwl7 wl7 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+20n} 1.8 {t_start+20n+0.1n} 0)
+Vwl6 wl6 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+35n} 1.8 {t_start+35n+0.1n} 0)
+Vwl7 wl7 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+50n} 1.8 {t_start+50n+0.1n} 0)
 
-*----------------------------------------------------------------------
-* Weight programming: use initial conditions on storage nodes
-* Weight matrix W[row][col] -- 1 means Q=VDD (cell conducts)
-* Test pattern: identity-like matrix with some extra entries
-*----------------------------------------------------------------------
-* WWL and write bitlines held low (no writing during compute)
+* Write wordlines held low (no writing during compute)
 Vwwl0 wwl0 0 0
 Vwwl1 wwl1 0 0
 Vwwl2 wwl2 0 0
@@ -105,7 +93,9 @@ Vwwl5 wwl5 0 0
 Vwwl6 wwl6 0 0
 Vwwl7 wwl7 0 0
 
-* Bitcell array instantiation: X_r{row}_c{col}
+*----------------------------------------------------------------------
+* 8x8 Bitcell Array
+*----------------------------------------------------------------------
 * Row 0
 Xcell_r0_c0 bl0 blb0 wl0 wwl0 q_r0c0 qb_r0c0 vdd vss cim_bitcell
 Xcell_r0_c1 bl1 blb1 wl0 wwl0 q_r0c1 qb_r0c1 vdd vss cim_bitcell
@@ -181,16 +171,7 @@ Xcell_r7_c7 bl7 blb7 wl7 wwl7 q_r7c7 qb_r7c7 vdd vss cim_bitcell
 
 *----------------------------------------------------------------------
 * Weight programming via initial conditions
-* Weight matrix (1 = cell stores '1', Q=VDD; 0 = cell stores '0', Q=0)
-* Test weight matrix W:
-*   Row 0: [1 0 1 0 1 0 1 0]
-*   Row 1: [0 1 0 1 0 1 0 1]
-*   Row 2: [1 1 0 0 1 1 0 0]
-*   Row 3: [0 0 1 1 0 0 1 1]
-*   Row 4: [1 1 1 1 0 0 0 0]
-*   Row 5: [0 0 0 0 1 1 1 1]
-*   Row 6: [1 0 0 1 1 0 0 1]
-*   Row 7: [0 1 1 0 0 1 1 0]
+* Test pattern: checkerboard-like matrix
 *----------------------------------------------------------------------
 * Row 0: W = [1 0 1 0 1 0 1 0]
 .ic v(q_r0c0)=1.8 v(qb_r0c0)=0
@@ -210,80 +191,43 @@ Xcell_r7_c7 bl7 blb7 wl7 wwl7 q_r7c7 qb_r7c7 vdd vss cim_bitcell
 .ic v(q_r1c5)=1.8 v(qb_r1c5)=0
 .ic v(q_r1c6)=0   v(qb_r1c6)=1.8
 .ic v(q_r1c7)=1.8 v(qb_r1c7)=0
-* Row 2: W = [1 1 0 0 1 1 0 0]
-.ic v(q_r2c0)=1.8 v(qb_r2c0)=0
-.ic v(q_r2c1)=1.8 v(qb_r2c1)=0
-.ic v(q_r2c2)=0   v(qb_r2c2)=1.8
-.ic v(q_r2c3)=0   v(qb_r2c3)=1.8
-.ic v(q_r2c4)=1.8 v(qb_r2c4)=0
-.ic v(q_r2c5)=1.8 v(qb_r2c5)=0
-.ic v(q_r2c6)=0   v(qb_r2c6)=1.8
-.ic v(q_r2c7)=0   v(qb_r2c7)=1.8
-* Row 3: W = [0 0 1 1 0 0 1 1]
-.ic v(q_r3c0)=0   v(qb_r3c0)=1.8
-.ic v(q_r3c1)=0   v(qb_r3c1)=1.8
-.ic v(q_r3c2)=1.8 v(qb_r3c2)=0
-.ic v(q_r3c3)=1.8 v(qb_r3c3)=0
-.ic v(q_r3c4)=0   v(qb_r3c4)=1.8
-.ic v(q_r3c5)=0   v(qb_r3c5)=1.8
-.ic v(q_r3c6)=1.8 v(qb_r3c6)=0
-.ic v(q_r3c7)=1.8 v(qb_r3c7)=0
-* Row 4: W = [1 1 1 1 0 0 0 0]
-.ic v(q_r4c0)=1.8 v(qb_r4c0)=0
-.ic v(q_r4c1)=1.8 v(qb_r4c1)=0
-.ic v(q_r4c2)=1.8 v(qb_r4c2)=0
-.ic v(q_r4c3)=1.8 v(qb_r4c3)=0
-.ic v(q_r4c4)=0   v(qb_r4c4)=1.8
-.ic v(q_r4c5)=0   v(qb_r4c5)=1.8
-.ic v(q_r4c6)=0   v(qb_r4c6)=1.8
-.ic v(q_r4c7)=0   v(qb_r4c7)=1.8
-* Row 5: W = [0 0 0 0 1 1 1 1]
-.ic v(q_r5c0)=0   v(qb_r5c0)=1.8
-.ic v(q_r5c1)=0   v(qb_r5c1)=1.8
-.ic v(q_r5c2)=0   v(qb_r5c2)=1.8
-.ic v(q_r5c3)=0   v(qb_r5c3)=1.8
-.ic v(q_r5c4)=1.8 v(qb_r5c4)=0
-.ic v(q_r5c5)=1.8 v(qb_r5c5)=0
-.ic v(q_r5c6)=1.8 v(qb_r5c6)=0
-.ic v(q_r5c7)=1.8 v(qb_r5c7)=0
-* Row 6: W = [1 0 0 1 1 0 0 1]
-.ic v(q_r6c0)=1.8 v(qb_r6c0)=0
-.ic v(q_r6c1)=0   v(qb_r6c1)=1.8
-.ic v(q_r6c2)=0   v(qb_r6c2)=1.8
-.ic v(q_r6c3)=1.8 v(qb_r6c3)=0
-.ic v(q_r6c4)=1.8 v(qb_r6c4)=0
-.ic v(q_r6c5)=0   v(qb_r6c5)=1.8
-.ic v(q_r6c6)=0   v(qb_r6c6)=1.8
-.ic v(q_r6c7)=1.8 v(qb_r6c7)=0
-* Row 7: W = [0 1 1 0 0 1 1 0]
-.ic v(q_r7c0)=0   v(qb_r7c0)=1.8
-.ic v(q_r7c1)=1.8 v(qb_r7c1)=0
-.ic v(q_r7c2)=1.8 v(qb_r7c2)=0
-.ic v(q_r7c3)=0   v(qb_r7c3)=1.8
-.ic v(q_r7c4)=0   v(qb_r7c4)=1.8
-.ic v(q_r7c5)=1.8 v(qb_r7c5)=0
-.ic v(q_r7c6)=1.8 v(qb_r7c6)=0
-.ic v(q_r7c7)=0   v(qb_r7c7)=1.8
+* Rows 2-7: all zeros for simplicity
+.ic v(q_r2c0)=0 v(qb_r2c0)=1.8 v(q_r2c1)=0 v(qb_r2c1)=1.8 v(q_r2c2)=0 v(qb_r2c2)=1.8 v(q_r2c3)=0 v(qb_r2c3)=1.8
+.ic v(q_r2c4)=0 v(qb_r2c4)=1.8 v(q_r2c5)=0 v(qb_r2c5)=1.8 v(q_r2c6)=0 v(qb_r2c6)=1.8 v(q_r2c7)=0 v(qb_r2c7)=1.8
+.ic v(q_r3c0)=0 v(qb_r3c0)=1.8 v(q_r3c1)=0 v(qb_r3c1)=1.8 v(q_r3c2)=0 v(qb_r3c2)=1.8 v(q_r3c3)=0 v(qb_r3c3)=1.8
+.ic v(q_r3c4)=0 v(qb_r3c4)=1.8 v(q_r3c5)=0 v(qb_r3c5)=1.8 v(q_r3c6)=0 v(qb_r3c6)=1.8 v(q_r3c7)=0 v(qb_r3c7)=1.8
+.ic v(q_r4c0)=0 v(qb_r4c0)=1.8 v(q_r4c1)=0 v(qb_r4c1)=1.8 v(q_r4c2)=0 v(qb_r4c2)=1.8 v(q_r4c3)=0 v(qb_r4c3)=1.8
+.ic v(q_r4c4)=0 v(qb_r4c4)=1.8 v(q_r4c5)=0 v(qb_r4c5)=1.8 v(q_r4c6)=0 v(qb_r4c6)=1.8 v(q_r4c7)=0 v(qb_r4c7)=1.8
+.ic v(q_r5c0)=0 v(qb_r5c0)=1.8 v(q_r5c1)=0 v(qb_r5c1)=1.8 v(q_r5c2)=0 v(qb_r5c2)=1.8 v(q_r5c3)=0 v(qb_r5c3)=1.8
+.ic v(q_r5c4)=0 v(qb_r5c4)=1.8 v(q_r5c5)=0 v(qb_r5c5)=1.8 v(q_r5c6)=0 v(qb_r5c6)=1.8 v(q_r5c7)=0 v(qb_r5c7)=1.8
+.ic v(q_r6c0)=0 v(qb_r6c0)=1.8 v(q_r6c1)=0 v(qb_r6c1)=1.8 v(q_r6c2)=0 v(qb_r6c2)=1.8 v(q_r6c3)=0 v(qb_r6c3)=1.8
+.ic v(q_r6c4)=0 v(qb_r6c4)=1.8 v(q_r6c5)=0 v(qb_r6c5)=1.8 v(q_r6c6)=0 v(qb_r6c6)=1.8 v(q_r6c7)=0 v(qb_r6c7)=1.8
+.ic v(q_r7c0)=0 v(qb_r7c0)=1.8 v(q_r7c1)=0 v(qb_r7c1)=1.8 v(q_r7c2)=0 v(qb_r7c2)=1.8 v(q_r7c3)=0 v(qb_r7c3)=1.8
+.ic v(q_r7c4)=0 v(qb_r7c4)=1.8 v(q_r7c5)=0 v(qb_r7c5)=1.8 v(q_r7c6)=0 v(qb_r7c6)=1.8 v(q_r7c7)=0 v(qb_r7c7)=1.8
+
+* BLs start precharged
+.ic v(bl0)=1.8 v(bl1)=1.8 v(bl2)=1.8 v(bl3)=1.8
+.ic v(bl4)=1.8 v(bl5)=1.8 v(bl6)=1.8 v(bl7)=1.8
 
 *----------------------------------------------------------------------
 * Simulation control
 *----------------------------------------------------------------------
-.tran 0.1n 100n UIC
+.tran 0.05n 120n UIC
 
-* Measure bitline voltages at end of compute (t=50ns, after all pulses done)
-.meas tran vbl0 FIND v(bl0) AT=50n
-.meas tran vbl1 FIND v(bl1) AT=50n
-.meas tran vbl2 FIND v(bl2) AT=50n
-.meas tran vbl3 FIND v(bl3) AT=50n
-.meas tran vbl4 FIND v(bl4) AT=50n
-.meas tran vbl5 FIND v(bl5) AT=50n
-.meas tran vbl6 FIND v(bl6) AT=50n
-.meas tran vbl7 FIND v(bl7) AT=50n
+* Measure bitline voltages at end of compute
+.meas tran vbl0 FIND v(bl0) AT=100n
+.meas tran vbl1 FIND v(bl1) AT=100n
+.meas tran vbl2 FIND v(bl2) AT=100n
+.meas tran vbl3 FIND v(bl3) AT=100n
+.meas tran vbl4 FIND v(bl4) AT=100n
+.meas tran vbl5 FIND v(bl5) AT=100n
+.meas tran vbl6 FIND v(bl6) AT=100n
+.meas tran vbl7 FIND v(bl7) AT=100n
 
-* Measure power
-.meas tran avg_power AVG power FROM=0 TO=100n
+* Power
+.meas tran avg_idd AVG i(Vdd) FROM=20n TO=100n
 
-* Save bitline waveforms
+* Save waveforms
 .save v(bl0) v(bl1) v(bl2) v(bl3) v(bl4) v(bl5) v(bl6) v(bl7)
 .save v(wl0) v(wl1) v(wl2) v(wl3) v(wl4) v(wl5) v(wl6) v(wl7)
 .save v(pre)

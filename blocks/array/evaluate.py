@@ -436,9 +436,9 @@ def evaluate(params=None, n_rows=8, n_cols=8, n_tests=N_TEST_VECTORS,
         params = load_parameters()
 
     # Apply sensible defaults if not explicitly overridden
-    params.setdefault("Wpre", 4.0)
+    params.setdefault("Wpre", 10.0)
     params.setdefault("Lpre", 0.15)
-    params.setdefault("Tpre_ns", 5.0)
+    params.setdefault("Tpre_ns", 20.0)
     params.setdefault("Cbl_extra_ff", 10000.0)
 
     bitcell_params = load_bitcell_params()
