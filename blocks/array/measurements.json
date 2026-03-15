@@ -4,5 +4,12 @@
   "compute_time_ns": 76.97,
   "power_mw": 0.01641669084,
   "n_tests": 5,
-  "array_size": "64x8"
+  "array_size": "64x8",
+  "v_bl_step_per_cell_lsb_mv": 14.1,
+  "v_bl_full_scale_8row_mv": 1471,
+  "adc_lsb_required_6bit_mv": 23.0,
+  "v_bl_range_8row": [
+    0.33,
+    1.8
+  ]
 }
