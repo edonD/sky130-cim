@@ -234,6 +234,8 @@ With a 100 fF BL capacitor (device capacitance only), a single active cell disch
 
 4. **No parasitic extraction**: Layout parasitics (wire resistance, coupling capacitance) are not included. The real cell will be slightly slower and have more leakage.
 
+5. **Operating regions**: RD1 is in saturation (current source), RD2 is in triode (resistor). The mid node sits at 0.34V. If the array uses BL voltage clamping, RD1 stays in saturation and provides a BL-voltage-independent current — good for linearity.
+
 ---
 
 ## Experiment History
