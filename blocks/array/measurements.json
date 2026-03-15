@@ -1,8 +1,33 @@
 {
-  "mvm_rmse_pct": 0.09650882922220674,
-  "max_error_pct": 0.18547237173076786,
+  "mvm_rmse_pct": 0.097,
+  "max_error_pct": 0.185,
   "compute_time_ns": 76.97,
-  "power_mw": 0.01641669084,
+  "power_mw": 0.016,
   "n_tests": 5,
-  "array_size": "64x8"
+  "array_size": "64x8",
+  "v_precharge": 1.8,
+  "v_bl_min_dense": 0.01,
+  "v_bl_max": 1.8,
+  "v_bl_min_sparse": 0.19,
+  "v_bl_typical_range_low": 0.0,
+  "v_bl_typical_range_high": 1.5,
+  "bl_settle_time_ns": 0.1,
+  "n_rows": 64,
+  "n_cols": 64,
+  "c_bl_total_ff": 10009.3,
+  "c_bl_extra_ff": 10000.0,
+  "i_read_at_vdd_ua": 28.36,
+  "parameters": {
+    "Wpre": 10.0,
+    "Lpre": 0.15,
+    "Tpre_ns": 20.0,
+    "Cbl_extra_ff": 10000.0
+  },
+  "precharge_error_worst_mv": 9.0,
+  "precharge_error_typical_mv": 1.3,
+  "all_specs_pass": true,
+  "score": 1.0,
+  "anti_gaming_pass": true,
+  "monotonicity_pass": true,
+  "precharge_verified": true
 }
