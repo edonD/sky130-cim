@@ -170,6 +170,21 @@ Digits 5 and 8 are weakest — these have the most confusable shapes, typical fo
 - **Noise error: 2.80** (mean absolute, across 64 hidden units)
 - The system is quantization-free by design — all error is from analog noise
 
+### Interface Consistency Verification
+
+All inter-block interfaces verified consistent:
+- I_READ: Bitcell (28.36 uA) = Array (28.36 uA) ✓
+- V_step: Calculated (14.16 mV) ≈ Array measured (14.1 mV) ✓
+- Max BL swing (binary): 906 mV < 1800 mV (VDD) ✓
+- ON/OFF ratio: 14.9M >> 100 (required) ✓
+- All timing phases sum to 208 ns < 500 ns target ✓
+- Total power 0.467 mW << 10 mW target ✓
+
+### Full 10K Evaluation
+![Full 10K Analysis](plots/full_10k_analysis.png)
+
+88.4% accuracy on all 10,000 MNIST test images. Top confusions: 9↔4 (7.2%), 7→9 (5.5%), 3↔5 (4.9%) — all shape-similar digit pairs expected for binary-weight networks.
+
 ## Known Limitations
 
 1. **Binary inputs only:** The current design requires binary input encoding. Multi-bit (4-bit) inputs would need either 4x larger C_BL (~40 pF, area-expensive) or shorter T_LSB (~1 ns, challenging for PWM).
