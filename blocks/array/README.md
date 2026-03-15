@@ -1,5 +1,7 @@
 # CIM 64×64 Array — Design Progress
 
+![Dashboard](plots/dashboard.png)
+
 ## Status: ALL SPECS PASS — Score 1.00
 
 | Spec | Target | Measured (64×8) | Measured (8×8) | Margin | Status |
