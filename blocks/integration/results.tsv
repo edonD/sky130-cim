@@ -1,1 +1,9 @@
 step	commit	score	specs_met	notes
+1	49e2e3b	100.0	4/4	Initial all-specs-pass: 88.3% MNIST, 94.0% MVM, 208ns, 0.47mW
+2	ded8936	100.0	4/4	SPICE validation 0.69mV RMSE, 10-run stability 87.1%±0.24%
+3	e23740f	100.0	4/4	System summary, 343k img/s, 42.2 TOPS/W
+4	926983d	100.0	4/4	Interface consistency verified, full 10K analysis
+5	46294b1	100.0	4/4	PVT corners: all 7 pass, self-calibrating ADC V_REF
+6	248f8eb	100.0	4/4	Improved weights: 88.8% ideal, 88.5% HW
+7	6345ad3	100.0	4/4	Thermal noise analysis, C_BL optimization study
+8	cb57782	100.0	4/4	Final: SNR=93dB, quantization-limited design

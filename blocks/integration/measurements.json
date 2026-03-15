@@ -1,10 +1,10 @@
 {
-  "mnist_accuracy_pct": 88.27000000000001,
-  "mvm_accuracy_pct": 93.64454013922493,
+  "mnist_accuracy_pct": 88.3,
+  "mvm_accuracy_pct": 93.86637487356747,
   "cycle_time_ns": 207.97,
   "total_power_mw": 0.4666727999999999,
-  "ideal_mnist_accuracy_pct": 88.81,
-  "mvm_rmse_pct": 6.355459860775072,
+  "ideal_mnist_accuracy_pct": 87.4,
+  "mvm_rmse_pct": 6.133625126432532,
   "cycle_time_breakdown": {
     "precharge_ns": 5.0,
     "compute_ns": 74.97,
