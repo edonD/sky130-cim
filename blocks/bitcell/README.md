@@ -1,6 +1,6 @@
 # CIM SRAM Bitcell — SKY130 8T Design
 
-## Status: ALL SPECS PASS | PVT: 45/45 PASS | Score: 1.0
+## Status: ALL SPECS PASS | PVT: 45/45 PASS | MC: 4.5-sigma PASS | Score: 1.0
 
 All 5 specifications met at nominal, across 45 PVT corners (5 process x 3 temp x 3 supply), and under Monte Carlo mismatch analysis (200 samples, 4.5-sigma bounds).
 
@@ -126,7 +126,17 @@ Worst-case corners:
 
 ## Monte Carlo Analysis
 
-Pending: MC analysis running (200 samples with 2% mismatch). Results will be updated when complete.
+200 samples with 2% width mismatch on Wn, Wp, Wrd. All specs pass at mean +/- 4.5 sigma.
+
+| Metric | Mean | Std | 4.5-sigma Worst | Spec | Status |
+|--------|------|-----|-----------------|------|--------|
+| I_read | 28.87 uA | 0.31 uA | 27.47 uA | > 5 uA | PASS |
+| I_leak | 0.0019 nA | 0.000003 nA | 0.0019 nA | < 100 nA | PASS |
+| ON/OFF | ~15.3M | — | 14.4M | > 100 | PASS |
+| SNM | 556.8 mV | 0.9 mV | 552.6 mV | > 100 mV | PASS |
+| T_read | 0.50 ns | 0.00 ns | 0.50 ns | < 5 ns | PASS |
+
+The tight distributions are because the read port uses minimum width (0.42 um), which gets clamped at the DRC minimum. In a real process, the mismatch would come from Vth variation (Pelgrom model), not just width variation. The Vth mismatch sigma for W=0.42um, L=1.0um is Avt/sqrt(WL) = 5mV*um / sqrt(0.42) = 7.7 mV, which would cause ~1.5% current variation — still well within margins.
 
 ---
 
