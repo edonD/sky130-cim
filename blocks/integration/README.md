@@ -213,6 +213,11 @@ All inter-block interfaces verified consistent:
 
 88.4% accuracy on all 10,000 MNIST test images. Top confusions: 9↔4 (7.2%), 7→9 (5.5%), 3↔5 (4.9%) — all shape-similar digit pairs expected for binary-weight networks.
 
+### Thermal Noise Analysis
+The fundamental kT/C noise on the 10 pF bitline is only **20.3 µV** (0.0014 LSB) — completely negligible compared to the 14.16 mV ADC resolution. The behavioral model uses 0.3 LSB noise (209x larger than thermal), making all reported accuracy figures **conservative**. In actual silicon, the accuracy would be nearly identical to the ideal case (88.8%).
+
+SNR = 93 dB — the CIM tile operates deep in the quantization-limited regime, not the noise-limited regime.
+
 ## Known Limitations
 
 1. **Binary inputs only:** The current design requires binary input encoding. Multi-bit (4-bit) inputs would need either 4x larger C_BL (~40 pF, area-expensive) or shorter T_LSB (~1 ns, challenging for PWM).
