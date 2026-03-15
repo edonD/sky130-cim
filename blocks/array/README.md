@@ -139,6 +139,23 @@ All anti-gaming checks pass:
 - Column swap → outputs swap correctly (computation depends on weights, not layout)
 - Edge cases: all-zero inputs, max discharge, diagonal weights all behave correctly
 
+## PVT Corner Analysis
+
+### PVT Corner RMSE
+![PVT Corners](plots/pvt_corners.png)
+
+All 5 process corners pass the < 10% RMSE spec:
+
+| Corner | Avg RMSE | Max RMSE | Margin | Status |
+|--------|----------|----------|--------|--------|
+| TT | 0.064% | 0.067% | 99.3% | **PASS** |
+| SS | 6.04% | 6.41% | 35.9% | **PASS** |
+| FF | 6.17% | 6.54% | 34.6% | **PASS** |
+| SF | 6.93% | 7.35% | 26.5% | **PASS** |
+| FS | 6.68% | 7.08% | 29.2% | **PASS** |
+
+The higher RMSE at non-TT corners is because the I_READ(V_BL) characterization was done at TT only. The ideal model uses TT transistor behavior while the SPICE simulation uses the actual corner. A corner-specific characterization would reduce this gap. Even so, the worst case (SF, 7.35%) has 26.5% margin to the 10% spec.
+
 ## Known Limitations
 
 1. **Heavy BL saturation at 64 rows:** With typical 50% weight density and random inputs, most BL voltages cluster near 0V. The ADC would need to resolve very small voltages (0-200 mV range) with 6-bit resolution, requiring ~3 mV LSB. This is challenging but feasible.
