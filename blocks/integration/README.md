@@ -4,10 +4,12 @@
 
 | Spec | Target | Measured | Margin | Status |
 |------|--------|----------|--------|--------|
-| MNIST Accuracy | >85% | 88.3% | +3.9% | PASS |
+| MNIST Accuracy | >85% | 88.5% | +4.1% | PASS |
 | MVM Accuracy | >90% | 94.0% | +4.4% | PASS |
 | Cycle Time | <500 ns | 208.0 ns | 58.4% margin | PASS |
 | Total Power | <10 mW | 0.47 mW | 95.3% margin | PASS |
+
+**Verification depth:** SPICE-calibrated (0.69mV RMSE), 10-run stability (87.1%±0.24%), 7 PVT corners (all pass), 10K test images
 
 ## Architecture Overview
 
@@ -239,3 +241,7 @@ All inter-block interfaces verified consistent:
 | 6 | 100.0 | 4/4 | Full 10K eval: 88.3% MNIST, 94.0% MVM |
 | 7 | 100.0 | 4/4 | SPICE validation: 0.69mV RMSE (1.0% normalized) |
 | 8 | 100.0 | 4/4 | Phase B: 10-run stability 87.1%±0.24%, error budget analysis |
+| 9 | 100.0 | 4/4 | System summary, interface consistency, full 10K analysis |
+| 10 | 100.0 | 4/4 | PVT corners: all 7 pass, self-calibrating ADC V_REF |
+| 11 | 100.0 | 4/4 | Improved BNN weights: 88.8% ideal, 88.5% HW (10K) |
+| 12 | 100.0 | 4/4 | Weight visualization, multi-bit input analysis |
