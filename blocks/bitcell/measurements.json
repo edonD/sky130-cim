@@ -1,11 +1,75 @@
 {
-  "i_read_ua": 28.36,
-  "i_leak_na": 0.002,
-  "on_off_ratio": 14855624,
-  "snm_mv": 557,
-  "t_read_ns": 0.5,
-  "c_bl_cell_ff": 0.5,
-  "cell_area_um2": 1.383,
+  "measurements": {
+    "Doing analysis at TEMP": 24.0,
+    "i_read": -2.866232e-05,
+    "q_val": 1.8,
+    "qb_val": 4.95086e-08,
+    "q_read": 1.8,
+    "qb_read": 4.95086e-08,
+    "i_10p5": -2.863509e-05,
+    "i_11": -2.866232e-05,
+    "i_12": -2.866232e-05,
+    "i_15": -2.866232e-05,
+    "i_20": -2.866232e-05,
+    "RESULT_I_READ": -2.86623e-05,
+    "RESULT_Q_VAL": 1.8,
+    "RESULT_QB_VAL": 4.95086e-08,
+    "RESULT_Q_READ": 1.8,
+    "RESULT_QB_READ": 4.95086e-08,
+    "RESULT_I_10P5": -2.86351e-05,
+    "RESULT_I_11": -2.86623e-05,
+    "RESULT_I_12": -2.86623e-05,
+    "RESULT_I_15": -2.86623e-05,
+    "RESULT_I_20": -2.86623e-05,
+    "RESULT_I_READ_UA": 10.190800000000001,
+    "RESULT_STORAGE_OK": 1,
+    "RESULT_READ_DISTURB_OK": 1,
+    "RESULT_T_READ_NS": 0.5,
+    "corner": "tt",
+    "temperature": 24,
+    "supply_v": 1.8,
+    "RESULT_I_LEAK_NA": 0.06710429999999999,
+    "RESULT_SNM_MV": 518.9406989973197,
+    "RESULT_ON_OFF_RATIO": 226827.63821868505
+  },
+  "score": 1.0,
+  "details": {
+    "i_read_ua": {
+      "measured": 10.190800000000001,
+      "target": ">5",
+      "met": true,
+      "score": 1.0,
+      "unit": "\u00b5A"
+    },
+    "i_leak_na": {
+      "measured": 0.06710429999999999,
+      "target": "<100",
+      "met": true,
+      "score": 1.0,
+      "unit": "nA"
+    },
+    "on_off_ratio": {
+      "measured": 226827.63821868505,
+      "target": ">100",
+      "met": true,
+      "score": 1.0,
+      "unit": ""
+    },
+    "snm_mv": {
+      "measured": 518.9406989973197,
+      "target": ">100",
+      "met": "True",
+      "score": 1.0,
+      "unit": "mV"
+    },
+    "t_read_ns": {
+      "measured": 0.5,
+      "target": "<5",
+      "met": true,
+      "score": 1.0,
+      "unit": "ns"
+    }
+  },
   "parameters": {
     "Wp": 0.55,
     "Lp": 0.15,
@@ -16,14 +80,18 @@
     "Lrd": 1.0
   },
   "pvt": {
-    "worst_i_read_ua": 9.65,
-    "worst_i_leak_na": 0.31,
-    "worst_on_off_ratio": 69861,
-    "worst_snm_mv": 437,
+    "worst_i_read_ua": 10.190800000000001,
+    "worst_i_leak_na": 0.06710429999999999,
+    "worst_on_off_ratio": 226827.63821868505,
     "worst_t_read_ns": 0.5,
-    "all_pass": true,
-    "corners_tested": 45
+    "all_pass": true
   },
-  "storage_ok": true,
-  "read_disturb_ok": true
+  "monte_carlo": {
+    "i_read_mean_ua": 28.514903333333336,
+    "i_read_worst_ua": 25.87938687824811,
+    "i_leak_mean_na": 0.0018884526666666666,
+    "i_leak_worst_na": 0.0018968950707081704,
+    "on_off_worst": 13643025.003268378,
+    "all_pass": "True"
+  }
 }
