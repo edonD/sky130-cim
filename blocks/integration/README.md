@@ -170,6 +170,23 @@ Digits 5 and 8 are weakest — these have the most confusable shapes, typical fo
 - **Noise error: 2.80** (mean absolute, across 64 hidden units)
 - The system is quantization-free by design — all error is from analog noise
 
+### PVT Corner Sensitivity
+![PVT Sensitivity](plots/pvt_sensitivity.png)
+
+All 7 PVT corners pass all specs — the system is robust to process variations:
+
+| Corner | MNIST Acc | Cycle Time | Power | Status |
+|--------|-----------|------------|-------|--------|
+| Nominal (TT) | 89.2% | 208 ns | 0.47 mW | PASS |
+| Slow I_READ (SS, 9.65uA) | 89.0% | 208 ns | 0.47 mW | PASS |
+| Fast I_READ (FF, 40uA) | 87.6% | 208 ns | 0.47 mW | PASS |
+| High Leakage (0.31nA) | 89.6% | 208 ns | 0.47 mW | PASS |
+| Large C_BL (+10%) | 89.8% | 208 ns | 0.47 mW | PASS |
+| Small C_BL (-10%) | 88.6% | 208 ns | 0.47 mW | PASS |
+| Slow ADC (180ns, 5.5 ENOB) | 89.0% | 280 ns | 0.67 mW | PASS |
+
+Key insight: because the ADC gain is calibrated to the signal range (gain=1.0 regardless of I_READ or C_BL), the quantization is always optimal. The system is inherently self-calibrating — V_REF tracks the signal swing.
+
 ### Interface Consistency Verification
 
 All inter-block interfaces verified consistent:
