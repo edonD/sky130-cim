@@ -102,6 +102,10 @@ The 10 pF capacitor would be implemented as a MIM (metal-insulator-metal) capaci
 
 The BL settles almost instantly after WL drops because the charge is stored on the capacitor. There is no resistive path to discharge after the read transistors turn off.
 
+### Design Space
+![Design Space](plots/design_space.png)
+RMSE vs C_BL extra capacitance at 64×8 for TT and SF (worst) corners. All points pass the 10% spec by a large margin. Even 1pF at the worst corner achieves 0.59% RMSE. The current design (10 pF) prioritizes ADC dynamic range over minimum area.
+
 ## What Was Tried and Rejected
 
 1. **Small C_BL (50 fF, midpoint default):** All bitlines saturated to 0V regardless of weights. No MVM discrimination. Passed specs falsely because both sim and ideal clipped to 0V.
