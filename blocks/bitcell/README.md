@@ -226,7 +226,7 @@ With a 100 fF BL capacitor (device capacitance only), a single active cell disch
 
 ## Known Limitations
 
-1. **BL is modeled as voltage source**: The testbench uses a DC voltage source for BL, which provides infinite charge. In a real array, BL would discharge during read, and the read current would decrease as V_BL drops. The array block must account for this.
+1. **BL is modeled as voltage source**: The testbench uses a DC voltage source for BL, which provides infinite charge. In a real array, BL would discharge during read, and the read current would decrease as V_BL drops. The array block should use BL voltage clamping (e.g., cascode current mirror) to maintain linearity — this is standard practice in published CIM SRAM designs (see ISSCC 2021 CIM papers).
 
 2. **T_READ measurement**: The 0.5 ns value is measured as time from WL edge to 90% of steady-state current. This is fast because the transistors are small and the step input is ideal (100 ps rise time). In reality, the WL driver has finite rise time which will increase T_READ.
 
