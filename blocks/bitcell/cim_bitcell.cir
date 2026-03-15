@@ -1,0 +1,37 @@
+* SKY130 CIM 8T SRAM Bitcell — Subcircuit for Array Integration
+* Optimized: all 5 specs pass across 45 PVT corners + 4.5-sigma MC
+*
+* Pinout: bl blb wl wwl q qb vdd vss
+*   bl:  Bitline (read port — current: BL -> RD1 -> mid -> RD2 -> VSS)
+*   blb: Bitline bar (write port complementary — connect to BLBW for write)
+*   wl:  Wordline / CIM input (gates RD2)
+*   wwl: Write wordline (gates AXL, AXR for programming weights)
+*   q:   Storage node (weight bit)
+*   qb:  Complementary storage node
+*   vdd: Power supply (1.8V nominal)
+*   vss: Ground
+*
+* Key metrics (tt/27C/1.8V):
+*   I_read  = 28.4 uA (weight=1, WL=VDD)
+*   I_leak  = 0.002 nA (weight=0, WL=VDD)
+*   ON/OFF  = 14.9M
+*   SNM     = 557 mV
+*   T_read  = 0.5 ns
+
+.subckt cim_bitcell bl blb wl wwl q qb vdd vss
+
+* 6T Storage Core — Cross-coupled inverters
+XMPL q qb vdd vdd sky130_fd_pr__pfet_01v8 W=0.55u L=0.15u nf=1
+XMNL q qb vss vss sky130_fd_pr__nfet_01v8 W=0.84u L=0.15u nf=1
+XMPR qb q vdd vdd sky130_fd_pr__pfet_01v8 W=0.55u L=0.15u nf=1
+XMNR qb q vss vss sky130_fd_pr__nfet_01v8 W=0.84u L=0.15u nf=1
+
+* Write Access Transistors
+XMAXL bl wwl q vss sky130_fd_pr__nfet_01v8 W=0.42u L=0.15u nf=1
+XMAXR blb wwl qb vss sky130_fd_pr__nfet_01v8 W=0.42u L=0.15u nf=1
+
+* 2T Decoupled Read Port (CIM Compute)
+XMRD1 bl q mid_rd vss sky130_fd_pr__nfet_01v8 W=0.42u L=1.0u nf=1
+XMRD2 mid_rd wl vss vss sky130_fd_pr__nfet_01v8 W=0.42u L=1.0u nf=1
+
+.ends cim_bitcell

@@ -237,13 +237,34 @@ def compute_derived_metrics(measurements: Dict[str, float],
     qb_read = measurements.get("RESULT_QB_READ", supply_v)
     measurements["RESULT_READ_DISTURB_OK"] = 1 if (q_read > 0.7 * supply_v and qb_read < 0.3 * supply_v) else 0
 
-    # Read timing
-    t_wl = measurements.get("RESULT_T_WL_RISE", 0)
-    t_i90 = measurements.get("RESULT_T_I90", 0)
-    if t_wl > 0 and t_i90 > t_wl:
-        t_read_ns = (t_i90 - t_wl) * 1e9
-    else:
-        t_read_ns = 999.0
+    # Read timing — compute from sampled current points (WL rises at 10ns)
+    i_steady = abs(i_read_raw)
+    t_read_ns = 999.0
+    if i_steady > 1e-12:
+        i_target = 0.9 * i_steady
+        times = [10.5, 11, 12, 15, 20]
+        keys = ["RESULT_I_10P5", "RESULT_I_11", "RESULT_I_12",
+                "RESULT_I_15", "RESULT_I_20"]
+        currents = [abs(measurements.get(k, 0)) for k in keys]
+
+        for i, (t, curr) in enumerate(zip(times, currents)):
+            if curr >= i_target:
+                if i == 0:
+                    t_read_ns = t - 10.0
+                else:
+                    t_prev = times[i - 1]
+                    c_prev = currents[i - 1]
+                    frac = (i_target - c_prev) / (curr - c_prev) if curr != c_prev else 0
+                    t_read_ns = t_prev + frac * (t - t_prev) - 10.0
+                break
+
+    # Fallback: try old method if new samples not available
+    if t_read_ns >= 999.0:
+        t_wl = measurements.get("RESULT_T_WL_RISE", 0)
+        t_i90 = measurements.get("RESULT_T_I90", 0)
+        if t_wl > 0 and t_i90 > t_wl:
+            t_read_ns = (t_i90 - t_wl) * 1e9
+
     t_read_ns = max(0.01, min(999.0, t_read_ns))
     measurements["RESULT_T_READ_NS"] = t_read_ns
 
@@ -300,6 +321,95 @@ def run_leakage_simulation(template: str, param_values: Dict[str, float],
     i_leak_raw = measurements.get("RESULT_I_READ", 0)  # Same measurement point
     i_leak_na = abs(i_leak_raw) * 1e9  # A -> nA
     return i_leak_na
+
+
+def run_snm_simulation(template: str, param_values: Dict[str, float],
+                       tmp_dir: str, corner: str = "tt",
+                       temperature: int = 24, supply_v: float = 1.8) -> float:
+    """Run a DC sweep of a single inverter to get VTC, then compute SNM
+    using the butterfly curve method. Returns SNM in mV."""
+    # Build inverter VTC netlist (same sizing as the 6T core inverters)
+    snm_netlist = f""".lib "sky130_models/sky130.lib.spice" {corner}
+Vdd vdd 0 DC {supply_v}
+Vss vss 0 DC 0
+Vin in 0 DC 0
+XMP out in vdd vdd sky130_fd_pr__pfet_01v8 W={param_values.get('Wp', 0.55)}u L={param_values.get('Lp', 0.15)}u nf=1
+XMN out in vss vss sky130_fd_pr__nfet_01v8 W={param_values.get('Wn', 0.84)}u L={param_values.get('Ln', 0.15)}u nf=1
+.options reltol=0.001
+.temp {temperature}
+.control
+dc Vin 0 {supply_v} 0.005
+wrdata snm_eval_vtc v(out)
+echo "RESULT_DONE"
+.endc
+.end
+"""
+    path = os.path.join(tmp_dir, f"snm_{corner}_T{temperature}_V{supply_v}.cir")
+    with open(path, "w") as f:
+        f.write(snm_netlist)
+
+    try:
+        result = subprocess.run(
+            [NGSPICE, "-b", path],
+            capture_output=True, text=True, timeout=60,
+            cwd=PROJECT_DIR
+        )
+        output = result.stdout + result.stderr
+    except Exception:
+        return 0.0
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+
+    if "RESULT_DONE" not in output:
+        return 0.0
+
+    # Parse VTC data
+    vtc_file = os.path.join(PROJECT_DIR, "snm_eval_vtc")
+    if not os.path.exists(vtc_file):
+        return 0.0
+
+    try:
+        vin_arr, vout_arr = [], []
+        with open(vtc_file) as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) >= 2:
+                    try:
+                        vin_arr.append(float(parts[0]))
+                        vout_arr.append(float(parts[1]))
+                    except ValueError:
+                        continue
+
+        if len(vin_arr) < 20:
+            return 0.0
+
+        vin = np.array(vin_arr)
+        vout = np.array(vout_arr)
+
+        # Butterfly curve: gap = f(x) - f^(-1)(x)
+        f_inv = np.interp(vin, vout[::-1], vin[::-1])
+        gap = vout - f_inv
+
+        margin = max(5, len(vin) // 10)
+        trip_idx = margin + np.argmin(np.abs(gap[margin:-margin]))
+
+        upper = gap[:trip_idx]
+        lower = gap[trip_idx:]
+        snm_upper = np.max(upper) if np.any(upper > 0) else 0
+        snm_lower = np.max(-lower) if np.any(lower < 0) else 0
+
+        snm_v = min(snm_upper, snm_lower) / np.sqrt(2)
+        return snm_v * 1000  # mV
+    except Exception:
+        return 0.0
+    finally:
+        try:
+            os.unlink(vtc_file)
+        except:
+            pass
 
 
 # ---------------------------------------------------------------------------
@@ -373,6 +483,10 @@ def evaluate_params(template: str, param_values: Dict[str, float],
     i_leak_na = run_leakage_simulation(template, param_values, tmp_dir,
                                         NOMINAL_CORNER, NOMINAL_TEMP, NOMINAL_SUPPLY)
 
+    # Run SNM measurement
+    snm_mv = run_snm_simulation(template, param_values, tmp_dir,
+                                 NOMINAL_CORNER, NOMINAL_TEMP, NOMINAL_SUPPLY)
+
     try:
         import shutil
         shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -384,6 +498,7 @@ def evaluate_params(template: str, param_values: Dict[str, float],
 
     measurements = result["measurements"]
     measurements["RESULT_I_LEAK_NA"] = i_leak_na
+    measurements["RESULT_SNM_MV"] = snm_mv
 
     # Compute ON/OFF ratio
     i_read_ua = measurements.get("RESULT_I_READ_UA", 0)
@@ -416,6 +531,7 @@ def run_pvt_sweep(template: str, param_values: Dict[str, float],
     worst_i_leak = 0
     worst_on_off = 1e6
     worst_t_read = 0
+    worst_snm = 1e6
 
     print("\n--- PVT Corner Sweep ---")
     for corner in corners:
@@ -427,6 +543,10 @@ def run_pvt_sweep(template: str, param_values: Dict[str, float],
                 i_leak_na = run_leakage_simulation(template, param_values, tmp_dir,
                                                     corner=corner, temperature=temp,
                                                     supply_v=supply)
+
+                snm_mv = run_snm_simulation(template, param_values, tmp_dir,
+                                             corner=corner, temperature=temp,
+                                             supply_v=supply)
 
                 i_read_ua = 0
                 t_read_ns = 999.0
@@ -444,20 +564,22 @@ def run_pvt_sweep(template: str, param_values: Dict[str, float],
                     "corner": corner, "temp": temp, "supply": supply,
                     "i_read_ua": i_read_ua, "i_leak_na": i_leak_na,
                     "on_off_ratio": on_off, "t_read_ns": t_read_ns,
-                    "storage_ok": storage_ok
+                    "snm_mv": snm_mv, "storage_ok": storage_ok
                 })
 
                 worst_i_read = min(worst_i_read, i_read_ua)
                 worst_i_leak = max(worst_i_leak, i_leak_na)
                 worst_on_off = min(worst_on_off, on_off)
                 worst_t_read = max(worst_t_read, t_read_ns)
+                worst_snm = min(worst_snm, snm_mv)
 
                 status = "PASS" if (i_read_ua >= 5 and i_leak_na <= 100
                                     and on_off >= 100 and t_read_ns <= 5
-                                    and storage_ok) else "FAIL"
+                                    and snm_mv >= 100 and storage_ok) else "FAIL"
                 print(f"  {corner:>2s} T={temp:>4d}C V={supply:.2f}V: "
                       f"Iread={i_read_ua:>7.2f}uA  Ileak={i_leak_na:>7.1f}nA  "
-                      f"ratio={on_off:>7.1f}  tread={t_read_ns:>6.2f}ns  [{status}]")
+                      f"ratio={on_off:>7.1f}  SNM={snm_mv:>6.0f}mV  "
+                      f"tread={t_read_ns:>6.2f}ns  [{status}]")
 
     if own_tmp:
         try:
@@ -469,12 +591,12 @@ def run_pvt_sweep(template: str, param_values: Dict[str, float],
     all_pass = all(
         r["i_read_ua"] >= 5 and r["i_leak_na"] <= 100
         and r["on_off_ratio"] >= 100 and r["t_read_ns"] <= 5
-        and r["storage_ok"]
+        and r.get("snm_mv", 0) >= 100 and r["storage_ok"]
         for r in results
     )
 
     print(f"\n  Worst-case: Iread={worst_i_read:.2f}uA, Ileak={worst_i_leak:.1f}nA, "
-          f"ratio={worst_on_off:.1f}, tread={worst_t_read:.2f}ns")
+          f"ratio={worst_on_off:.1f}, SNM={worst_snm:.0f}mV, tread={worst_t_read:.2f}ns")
     print(f"  PVT sweep: {'ALL PASS' if all_pass else 'SOME FAIL'}")
     print("--- PVT Sweep Done ---\n")
 
@@ -483,6 +605,7 @@ def run_pvt_sweep(template: str, param_values: Dict[str, float],
         "worst_i_read_ua": worst_i_read,
         "worst_i_leak_na": worst_i_leak,
         "worst_on_off_ratio": worst_on_off,
+        "worst_snm_mv": worst_snm,
         "worst_t_read_ns": worst_t_read,
         "all_pass": all_pass,
     }
@@ -976,6 +1099,8 @@ def main():
         measurements["RESULT_I_LEAK_NA"] = pvt_results["worst_i_leak_na"]
         measurements["RESULT_ON_OFF_RATIO"] = pvt_results["worst_on_off_ratio"]
         measurements["RESULT_T_READ_NS"] = pvt_results["worst_t_read_ns"]
+        if "worst_snm_mv" in pvt_results:
+            measurements["RESULT_SNM_MV"] = pvt_results["worst_snm_mv"]
 
     elapsed = time.time() - t0
     score, details = score_measurements(measurements, specs)

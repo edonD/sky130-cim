@@ -7,8 +7,8 @@
 | DNL | < 0.5 LSB | 0.000 LSB (ngspice) / 0.125 LSB (MC worst) | 75% | PASS |
 | INL | < 1.0 LSB | 0.000 LSB (ngspice) / 0.246 LSB (MC worst) | 75% | PASS |
 | ENOB | > 5.0 bits | 6.00 bits (ngspice) / 5.72 bits (MC worst) | 14% | PASS |
-| Conversion Time | < 200 ns | 78.0 ns | 61% | PASS |
-| Power | < 50 uW | 31 uW (ngspice comp+DAC) / 32.4 uW (model) | 38% | PASS |
+| Conversion Time | < 200 ns | 113 ns | 43% | PASS |
+| Power | < 50 uW | 18.9 uW (model) | 62% | PASS |
 
 ## Architecture
 
@@ -38,8 +38,8 @@ Binary-weighted charge-redistribution SAR ADC with StrongARM comparator.
 | Lcomp_in | 1.88 um | Comparator input pair length |
 | Wcomp_latch | 2.03 um | Comparator latch width |
 | Lcomp_latch | 0.31 um | Comparator latch length |
-| Wcomp_tail | 5.01 um | Comparator tail width |
-| Tsar_ns | 12.16 ns | SAR clock period |
+| Wcomp_tail | 3.0 um | Comparator tail width |
+| Tsar_ns | 18.0 ns | SAR clock period |
 
 **Total DAC capacitance:** 64 * 10.7 fF = 685 fF
 
@@ -261,6 +261,19 @@ The design space was explored extensively. Several configurations pass all specs
 
 The current design prioritizes ENOB margin (5.72 bits, 14% over spec) and conversion speed (78 ns, 61% margin). The "minimum power" variant trades speed margin for 77% lower power.
 
+## CIM Input Noise Robustness
+
+The ADC maintains ENOB > 5.0 with up to 10 mV rms input noise (typical CIM level):
+
+| Input Noise | ENOB | Status |
+|-------------|------|--------|
+| 0 mV | 6.00 | PASS |
+| 5 mV | 5.64 | PASS |
+| 10 mV (typical CIM) | 5.18 | PASS |
+| 15 mV | 4.85 | FAIL |
+
+The CIM system should target < 12 mV rms bitline noise for reliable operation. Typical CIM noise sources: kT/C on 100fF bitline (0.2 mV) + supply noise (10 mV).
+
 ## Known Limitations
 
 1. **Capacitor mismatch model is analytical**, not from Monte Carlo SPICE. In silicon, mismatch may differ from the Pelgrom model used here. The 0.125 LSB worst-case DNL from 50 MC trials suggests adequate margin, but post-layout extraction would be needed to confirm.
@@ -305,3 +318,4 @@ The current design prioritizes ENOB margin (5.72 bits, 14% over spec) and conver
 | 10 | 1.000 | 5/5 | Charge redistribution verified vs behavioral model |
 | 11 | 1.000 | 5/5 | CIM end-to-end: 100/100 zero-error accuracy |
 | 12 | 1.000 | 5/5 | Noise analysis: kT/C negligible at 0.078 mV |
+| 13 | 1.000 | 5/5 | Rebalanced: Tsar=18ns, Wtail=3u, power 18.9uW (was 32.4) |

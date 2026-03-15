@@ -1,3 +1,5 @@
 .terraform/
 *.tfstate
 *.tfstate.backup
+blocks/*/sky130_models
+blocks/*/sky130_fd_pr_models

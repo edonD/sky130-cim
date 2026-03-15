@@ -19,9 +19,9 @@
 * Tail NMOS (clocked — enables current during evaluation)
 XMtail ntail clk vss vss sky130_fd_pr__nfet_01v8 W={Wcomp_tail}u L=0.15u nf=1
 
-* Input differential pair (NMOS)
-XM1 d1 inp ntail vss sky130_fd_pr__nfet_01v8 W={Wcomp_in}u L={Lcomp_in}u nf=1
-XM2 d2 inm ntail vss sky130_fd_pr__nfet_01v8 W={Wcomp_in}u L={Lcomp_in}u nf=1
+* Input differential pair (NMOS, fingered for layout symmetry)
+XM1 d1 inp ntail vss sky130_fd_pr__nfet_01v8 W={Wcomp_in}u L={Lcomp_in}u nf=2
+XM2 d2 inm ntail vss sky130_fd_pr__nfet_01v8 W={Wcomp_in}u L={Lcomp_in}u nf=2
 
 * Reset PMOS (precharge internal nodes to VDD when CLK=0)
 XMr1 d1 clk vdd vdd sky130_fd_pr__pfet_01v8 W=2u L=0.15u nf=1

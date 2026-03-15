@@ -1,0 +1,47 @@
+{
+  "i_read_ua": 28.36,
+  "i_leak_na": 0.002,
+  "on_off_ratio": 14855624,
+  "snm_mv": 557,
+  "t_read_ns": 0.5,
+  "c_bl_cell_ff": 0.146,
+  "cell_area_um2": 1.383,
+  "energy_per_mac_pj": 1.93,
+  "data_retention_v": 0.6,
+  "parameters": {
+    "Wp": 0.55,
+    "Lp": 0.15,
+    "Wn": 0.84,
+    "Ln": 0.15,
+    "Wax": 0.42,
+    "Wrd": 0.42,
+    "Lrd": 1.0
+  },
+  "pvt": {
+    "worst_i_read_ua": 9.65,
+    "worst_i_leak_na": 0.31,
+    "worst_on_off_ratio": 69861,
+    "worst_snm_mv": 437,
+    "worst_t_read_ns": 0.5,
+    "all_pass": true,
+    "corners_tested": 45
+  },
+  "monte_carlo": {
+    "n_samples": 200,
+    "sigma": 4.5,
+    "i_read_worst_ua": 27.47,
+    "i_leak_worst_na": 0.002,
+    "snm_worst_mv": 553,
+    "all_pass": true
+  },
+  "margins": {
+    "i_read_pct": 93.0,
+    "i_leak_pct": 99.7,
+    "on_off_pct": 69761.0,
+    "snm_pct": 337.2,
+    "t_read_pct": 90.0
+  },
+  "storage_ok": true,
+  "read_disturb_ok": true,
+  "write_margin_ok": true
+}

@@ -4,3 +4,4 @@ step	commit	score	specs_met	notes
 3	-	0.933	4/5	All pass except power (153 uW)
 4	-	1.000	5/5	Fixed power model, DE optimization, all specs pass
 5	-	1.000	5/5	ngspice validation confirmed
+14	-	1.000	5/5	Final balanced design: Tsar=18ns, Wtail=3u, power=18.9uW

@@ -1,8 +1,8 @@
 name,value
-Cu,10.698912444583742
-Lcomp_in,1.8800785871331773
-Lcomp_latch,0.3086746115816407
-Tsar_ns,12.15938343550932
-Wcomp_in,10.79792180491474
-Wcomp_latch,2.0278161055528923
-Wcomp_tail,5.014177426679211
+Cu,10.7
+Lcomp_in,1.88
+Lcomp_latch,0.31
+Tsar_ns,18.0
+Wcomp_in,10.8
+Wcomp_latch,2.03
+Wcomp_tail,3.0
