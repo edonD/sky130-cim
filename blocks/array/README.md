@@ -249,6 +249,9 @@ Combined worst-case PVT conditions (e.g., SF corner at -40°C) show RMSE up to 1
 - [x] Sparse weight test (15% density) — RMSE=0.11%, BL range [0.19, 1.39]V
 - [x] I_READ vs V_BL characterization — nonlinear model for accurate comparison
 - [x] Precharge stress test — from 0V to 1.5V starting voltages
+- [x] Read disturb — 10 consecutive max-stress cycles, weight perfectly stable
+- [x] WL timing skew sensitivity — ±500ps adds only 0.08% error per cell
+- [x] System error budget — array contributes 22% of total (not the bottleneck)
 
 ## Experiment History
 
