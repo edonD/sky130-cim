@@ -263,8 +263,8 @@ def generate_netlist(n_rows, n_cols, weight_matrix, input_vector, params,
     lines.append(f".meas tran compute_done WHEN v(wl0)=0 FALL=1")
     lines.append("")
 
-    # Power measurement via supply current
-    lines.append(f".meas tran avg_idd AVG i(Vdd) FROM={Tpre_ns}n TO={t_end_ns}n")
+    # Power measurement via supply current (full cycle including precharge)
+    lines.append(f".meas tran avg_idd AVG i(Vdd) FROM=0n TO={t_end_ns}n")
     lines.append("")
 
     # Save signals
