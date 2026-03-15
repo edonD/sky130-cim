@@ -246,3 +246,5 @@ Combined worst-case PVT conditions (e.g., SF corner at -40°C) show RMSE up to 1
 | 8 | 1.00 | 4/4 | 0.13 | 0.21 | Corner-specific I_READ curves: all PVT corners pass with 99%+ margin |
 | 9 | 1.00 | 4/4 | 0.05 | 0.06 | Temp-specific I_READ: -40C/125C now sub-0.1% RMSE |
 | 10 | 1.00 | 4/4 | 0.09 | 0.21 | 64×16 validation (1024 cells, 156s), power=0.031mW |
+| 11 | 1.00 | 4/4 | 0.07 | 0.12 | Monte Carlo: 20 random patterns, 100% yield, std=0.005% |
+| 12 | 1.00 | 4/4 | 0.13 | 0.15 | 64×8 robustness: 6 different seeds, all pass with 98%+ margin |
