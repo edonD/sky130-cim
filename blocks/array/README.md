@@ -81,6 +81,10 @@ Precharge from various starting voltages (0V worst-case to 1.5V typical) with Wp
 ![I_READ Curve](plots/iread_vs_vbl.png)
 Read current as a function of bitline voltage. At V_BL = VDD: I = 28.36 µA (matches upstream measurement). Current drops significantly below V_BL = 0.5V as the read transistor enters triode. This nonlinear curve is used in the ideal MVM model.
 
+### I_READ Across Full PVT Space
+![I_READ PVT](plots/iread_pvt_comprehensive.png)
+Read current varies ~2× across corners (20-37µA at VDD) and ~1.8× across temperature (-40°C to 125°C). The nonlinear shape is consistent — current always drops as BL approaches 0V. Corner-specific characterization enables sub-0.2% MVM accuracy at all PVT points.
+
 ## Design Rationale
 
 ### Why 10 pF BL Capacitance?
