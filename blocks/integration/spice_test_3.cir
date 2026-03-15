@@ -1,0 +1,222 @@
+* CIM Integration SPICE Validation — 8x8 Binary MVM
+* W = [[1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0], [1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0], [1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0], [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0], [1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0]]
+* x = [1, 1, 1, 0, 1, 0, 0, 0]
+
+.lib "sky130_models/sky130.lib.spice" tt
+.param supply=1.8
+.param Wpre=10 Lpre=0.15 Tpre_ns=20 Cbl_extra_ff=10000
+.param T_LSB=5n
+.param t_start={Tpre_ns*1e-9+1n}
+
+.subckt cim_bitcell bl blb wl wwl q qb vdd vss
+XPL q qb vdd vdd sky130_fd_pr__pfet_01v8 w=0.55u l=0.15u
+XPR qb q vdd vdd sky130_fd_pr__pfet_01v8 w=0.55u l=0.15u
+XNL q qb vss vss sky130_fd_pr__nfet_01v8 w=0.84u l=0.15u
+XNR qb q vss vss sky130_fd_pr__nfet_01v8 w=0.84u l=0.15u
+XAXL blb wwl q vss sky130_fd_pr__nfet_01v8 w=0.42u l=0.15u
+XAXR bl wwl qb vss sky130_fd_pr__nfet_01v8 w=0.42u l=0.15u
+XRD1 bl q mid vss sky130_fd_pr__nfet_01v8 w=0.42u l=1.0u
+XRD2 mid wl vss vss sky130_fd_pr__nfet_01v8 w=0.42u l=1.0u
+.ends cim_bitcell
+
+.subckt precharge bl pre vdd vss
+XPRE vdd pre bl vdd sky130_fd_pr__pfet_01v8 w=10u l=0.15u
+.ends precharge
+
+Vdd vdd 0 {supply}
+Vss vss 0 0
+
+Vpre pre 0 PWL(0 0 {Tpre_ns*1e-9} 0 {(Tpre_ns+0.1)*1e-9} 1.8)
+
+Xpre0 bl0 pre vdd vss precharge
+Xpre1 bl1 pre vdd vss precharge
+Xpre2 bl2 pre vdd vss precharge
+Xpre3 bl3 pre vdd vss precharge
+Xpre4 bl4 pre vdd vss precharge
+Xpre5 bl5 pre vdd vss precharge
+Xpre6 bl6 pre vdd vss precharge
+Xpre7 bl7 pre vdd vss precharge
+Cbl0 bl0 0 {Cbl_extra_ff*1e-15}
+Cbl1 bl1 0 {Cbl_extra_ff*1e-15}
+Cbl2 bl2 0 {Cbl_extra_ff*1e-15}
+Cbl3 bl3 0 {Cbl_extra_ff*1e-15}
+Cbl4 bl4 0 {Cbl_extra_ff*1e-15}
+Cbl5 bl5 0 {Cbl_extra_ff*1e-15}
+Cbl6 bl6 0 {Cbl_extra_ff*1e-15}
+Cbl7 bl7 0 {Cbl_extra_ff*1e-15}
+
+Vwl0 wl0 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+T_LSB} 1.8 {t_start+T_LSB+0.1n} 0)
+Vwl1 wl1 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+T_LSB} 1.8 {t_start+T_LSB+0.1n} 0)
+Vwl2 wl2 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+T_LSB} 1.8 {t_start+T_LSB+0.1n} 0)
+Vwl3 wl3 0 0
+Vwl4 wl4 0 PWL(0 0 {t_start} 0 {t_start+0.1n} 1.8 {t_start+T_LSB} 1.8 {t_start+T_LSB+0.1n} 0)
+Vwl5 wl5 0 0
+Vwl6 wl6 0 0
+Vwl7 wl7 0 0
+
+Vwwl0 wwl0 0 0
+Vwwl1 wwl1 0 0
+Vwwl2 wwl2 0 0
+Vwwl3 wwl3 0 0
+Vwwl4 wwl4 0 0
+Vwwl5 wwl5 0 0
+Vwwl6 wwl6 0 0
+Vwwl7 wwl7 0 0
+
+Xcell_r0_c0 bl0 blb0 wl0 wwl0 q_r0c0 qb_r0c0 vdd vss cim_bitcell
+Xcell_r0_c1 bl1 blb1 wl0 wwl0 q_r0c1 qb_r0c1 vdd vss cim_bitcell
+Xcell_r0_c2 bl2 blb2 wl0 wwl0 q_r0c2 qb_r0c2 vdd vss cim_bitcell
+Xcell_r0_c3 bl3 blb3 wl0 wwl0 q_r0c3 qb_r0c3 vdd vss cim_bitcell
+Xcell_r0_c4 bl4 blb4 wl0 wwl0 q_r0c4 qb_r0c4 vdd vss cim_bitcell
+Xcell_r0_c5 bl5 blb5 wl0 wwl0 q_r0c5 qb_r0c5 vdd vss cim_bitcell
+Xcell_r0_c6 bl6 blb6 wl0 wwl0 q_r0c6 qb_r0c6 vdd vss cim_bitcell
+Xcell_r0_c7 bl7 blb7 wl0 wwl0 q_r0c7 qb_r0c7 vdd vss cim_bitcell
+Xcell_r1_c0 bl0 blb0 wl1 wwl1 q_r1c0 qb_r1c0 vdd vss cim_bitcell
+Xcell_r1_c1 bl1 blb1 wl1 wwl1 q_r1c1 qb_r1c1 vdd vss cim_bitcell
+Xcell_r1_c2 bl2 blb2 wl1 wwl1 q_r1c2 qb_r1c2 vdd vss cim_bitcell
+Xcell_r1_c3 bl3 blb3 wl1 wwl1 q_r1c3 qb_r1c3 vdd vss cim_bitcell
+Xcell_r1_c4 bl4 blb4 wl1 wwl1 q_r1c4 qb_r1c4 vdd vss cim_bitcell
+Xcell_r1_c5 bl5 blb5 wl1 wwl1 q_r1c5 qb_r1c5 vdd vss cim_bitcell
+Xcell_r1_c6 bl6 blb6 wl1 wwl1 q_r1c6 qb_r1c6 vdd vss cim_bitcell
+Xcell_r1_c7 bl7 blb7 wl1 wwl1 q_r1c7 qb_r1c7 vdd vss cim_bitcell
+Xcell_r2_c0 bl0 blb0 wl2 wwl2 q_r2c0 qb_r2c0 vdd vss cim_bitcell
+Xcell_r2_c1 bl1 blb1 wl2 wwl2 q_r2c1 qb_r2c1 vdd vss cim_bitcell
+Xcell_r2_c2 bl2 blb2 wl2 wwl2 q_r2c2 qb_r2c2 vdd vss cim_bitcell
+Xcell_r2_c3 bl3 blb3 wl2 wwl2 q_r2c3 qb_r2c3 vdd vss cim_bitcell
+Xcell_r2_c4 bl4 blb4 wl2 wwl2 q_r2c4 qb_r2c4 vdd vss cim_bitcell
+Xcell_r2_c5 bl5 blb5 wl2 wwl2 q_r2c5 qb_r2c5 vdd vss cim_bitcell
+Xcell_r2_c6 bl6 blb6 wl2 wwl2 q_r2c6 qb_r2c6 vdd vss cim_bitcell
+Xcell_r2_c7 bl7 blb7 wl2 wwl2 q_r2c7 qb_r2c7 vdd vss cim_bitcell
+Xcell_r3_c0 bl0 blb0 wl3 wwl3 q_r3c0 qb_r3c0 vdd vss cim_bitcell
+Xcell_r3_c1 bl1 blb1 wl3 wwl3 q_r3c1 qb_r3c1 vdd vss cim_bitcell
+Xcell_r3_c2 bl2 blb2 wl3 wwl3 q_r3c2 qb_r3c2 vdd vss cim_bitcell
+Xcell_r3_c3 bl3 blb3 wl3 wwl3 q_r3c3 qb_r3c3 vdd vss cim_bitcell
+Xcell_r3_c4 bl4 blb4 wl3 wwl3 q_r3c4 qb_r3c4 vdd vss cim_bitcell
+Xcell_r3_c5 bl5 blb5 wl3 wwl3 q_r3c5 qb_r3c5 vdd vss cim_bitcell
+Xcell_r3_c6 bl6 blb6 wl3 wwl3 q_r3c6 qb_r3c6 vdd vss cim_bitcell
+Xcell_r3_c7 bl7 blb7 wl3 wwl3 q_r3c7 qb_r3c7 vdd vss cim_bitcell
+Xcell_r4_c0 bl0 blb0 wl4 wwl4 q_r4c0 qb_r4c0 vdd vss cim_bitcell
+Xcell_r4_c1 bl1 blb1 wl4 wwl4 q_r4c1 qb_r4c1 vdd vss cim_bitcell
+Xcell_r4_c2 bl2 blb2 wl4 wwl4 q_r4c2 qb_r4c2 vdd vss cim_bitcell
+Xcell_r4_c3 bl3 blb3 wl4 wwl4 q_r4c3 qb_r4c3 vdd vss cim_bitcell
+Xcell_r4_c4 bl4 blb4 wl4 wwl4 q_r4c4 qb_r4c4 vdd vss cim_bitcell
+Xcell_r4_c5 bl5 blb5 wl4 wwl4 q_r4c5 qb_r4c5 vdd vss cim_bitcell
+Xcell_r4_c6 bl6 blb6 wl4 wwl4 q_r4c6 qb_r4c6 vdd vss cim_bitcell
+Xcell_r4_c7 bl7 blb7 wl4 wwl4 q_r4c7 qb_r4c7 vdd vss cim_bitcell
+Xcell_r5_c0 bl0 blb0 wl5 wwl5 q_r5c0 qb_r5c0 vdd vss cim_bitcell
+Xcell_r5_c1 bl1 blb1 wl5 wwl5 q_r5c1 qb_r5c1 vdd vss cim_bitcell
+Xcell_r5_c2 bl2 blb2 wl5 wwl5 q_r5c2 qb_r5c2 vdd vss cim_bitcell
+Xcell_r5_c3 bl3 blb3 wl5 wwl5 q_r5c3 qb_r5c3 vdd vss cim_bitcell
+Xcell_r5_c4 bl4 blb4 wl5 wwl5 q_r5c4 qb_r5c4 vdd vss cim_bitcell
+Xcell_r5_c5 bl5 blb5 wl5 wwl5 q_r5c5 qb_r5c5 vdd vss cim_bitcell
+Xcell_r5_c6 bl6 blb6 wl5 wwl5 q_r5c6 qb_r5c6 vdd vss cim_bitcell
+Xcell_r5_c7 bl7 blb7 wl5 wwl5 q_r5c7 qb_r5c7 vdd vss cim_bitcell
+Xcell_r6_c0 bl0 blb0 wl6 wwl6 q_r6c0 qb_r6c0 vdd vss cim_bitcell
+Xcell_r6_c1 bl1 blb1 wl6 wwl6 q_r6c1 qb_r6c1 vdd vss cim_bitcell
+Xcell_r6_c2 bl2 blb2 wl6 wwl6 q_r6c2 qb_r6c2 vdd vss cim_bitcell
+Xcell_r6_c3 bl3 blb3 wl6 wwl6 q_r6c3 qb_r6c3 vdd vss cim_bitcell
+Xcell_r6_c4 bl4 blb4 wl6 wwl6 q_r6c4 qb_r6c4 vdd vss cim_bitcell
+Xcell_r6_c5 bl5 blb5 wl6 wwl6 q_r6c5 qb_r6c5 vdd vss cim_bitcell
+Xcell_r6_c6 bl6 blb6 wl6 wwl6 q_r6c6 qb_r6c6 vdd vss cim_bitcell
+Xcell_r6_c7 bl7 blb7 wl6 wwl6 q_r6c7 qb_r6c7 vdd vss cim_bitcell
+Xcell_r7_c0 bl0 blb0 wl7 wwl7 q_r7c0 qb_r7c0 vdd vss cim_bitcell
+Xcell_r7_c1 bl1 blb1 wl7 wwl7 q_r7c1 qb_r7c1 vdd vss cim_bitcell
+Xcell_r7_c2 bl2 blb2 wl7 wwl7 q_r7c2 qb_r7c2 vdd vss cim_bitcell
+Xcell_r7_c3 bl3 blb3 wl7 wwl7 q_r7c3 qb_r7c3 vdd vss cim_bitcell
+Xcell_r7_c4 bl4 blb4 wl7 wwl7 q_r7c4 qb_r7c4 vdd vss cim_bitcell
+Xcell_r7_c5 bl5 blb5 wl7 wwl7 q_r7c5 qb_r7c5 vdd vss cim_bitcell
+Xcell_r7_c6 bl6 blb6 wl7 wwl7 q_r7c6 qb_r7c6 vdd vss cim_bitcell
+Xcell_r7_c7 bl7 blb7 wl7 wwl7 q_r7c7 qb_r7c7 vdd vss cim_bitcell
+
+.ic v(q_r0c0)=1.8 v(qb_r0c0)=0
+.ic v(q_r0c1)=0 v(qb_r0c1)=1.8
+.ic v(q_r0c2)=1.8 v(qb_r0c2)=0
+.ic v(q_r0c3)=0 v(qb_r0c3)=1.8
+.ic v(q_r0c4)=0 v(qb_r0c4)=1.8
+.ic v(q_r0c5)=0 v(qb_r0c5)=1.8
+.ic v(q_r0c6)=1.8 v(qb_r0c6)=0
+.ic v(q_r0c7)=1.8 v(qb_r0c7)=0
+.ic v(q_r1c0)=1.8 v(qb_r1c0)=0
+.ic v(q_r1c1)=1.8 v(qb_r1c1)=0
+.ic v(q_r1c2)=0 v(qb_r1c2)=1.8
+.ic v(q_r1c3)=1.8 v(qb_r1c3)=0
+.ic v(q_r1c4)=0 v(qb_r1c4)=1.8
+.ic v(q_r1c5)=0 v(qb_r1c5)=1.8
+.ic v(q_r1c6)=1.8 v(qb_r1c6)=0
+.ic v(q_r1c7)=1.8 v(qb_r1c7)=0
+.ic v(q_r2c0)=1.8 v(qb_r2c0)=0
+.ic v(q_r2c1)=1.8 v(qb_r2c1)=0
+.ic v(q_r2c2)=1.8 v(qb_r2c2)=0
+.ic v(q_r2c3)=1.8 v(qb_r2c3)=0
+.ic v(q_r2c4)=1.8 v(qb_r2c4)=0
+.ic v(q_r2c5)=1.8 v(qb_r2c5)=0
+.ic v(q_r2c6)=0 v(qb_r2c6)=1.8
+.ic v(q_r2c7)=1.8 v(qb_r2c7)=0
+.ic v(q_r3c0)=1.8 v(qb_r3c0)=0
+.ic v(q_r3c1)=0 v(qb_r3c1)=1.8
+.ic v(q_r3c2)=1.8 v(qb_r3c2)=0
+.ic v(q_r3c3)=0 v(qb_r3c3)=1.8
+.ic v(q_r3c4)=0 v(qb_r3c4)=1.8
+.ic v(q_r3c5)=1.8 v(qb_r3c5)=0
+.ic v(q_r3c6)=0 v(qb_r3c6)=1.8
+.ic v(q_r3c7)=0 v(qb_r3c7)=1.8
+.ic v(q_r4c0)=0 v(qb_r4c0)=1.8
+.ic v(q_r4c1)=0 v(qb_r4c1)=1.8
+.ic v(q_r4c2)=1.8 v(qb_r4c2)=0
+.ic v(q_r4c3)=0 v(qb_r4c3)=1.8
+.ic v(q_r4c4)=1.8 v(qb_r4c4)=0
+.ic v(q_r4c5)=0 v(qb_r4c5)=1.8
+.ic v(q_r4c6)=0 v(qb_r4c6)=1.8
+.ic v(q_r4c7)=0 v(qb_r4c7)=1.8
+.ic v(q_r5c0)=0 v(qb_r5c0)=1.8
+.ic v(q_r5c1)=1.8 v(qb_r5c1)=0
+.ic v(q_r5c2)=1.8 v(qb_r5c2)=0
+.ic v(q_r5c3)=0 v(qb_r5c3)=1.8
+.ic v(q_r5c4)=0 v(qb_r5c4)=1.8
+.ic v(q_r5c5)=1.8 v(qb_r5c5)=0
+.ic v(q_r5c6)=0 v(qb_r5c6)=1.8
+.ic v(q_r5c7)=0 v(qb_r5c7)=1.8
+.ic v(q_r6c0)=0 v(qb_r6c0)=1.8
+.ic v(q_r6c1)=1.8 v(qb_r6c1)=0
+.ic v(q_r6c2)=1.8 v(qb_r6c2)=0
+.ic v(q_r6c3)=1.8 v(qb_r6c3)=0
+.ic v(q_r6c4)=0 v(qb_r6c4)=1.8
+.ic v(q_r6c5)=0 v(qb_r6c5)=1.8
+.ic v(q_r6c6)=1.8 v(qb_r6c6)=0
+.ic v(q_r6c7)=1.8 v(qb_r6c7)=0
+.ic v(q_r7c0)=1.8 v(qb_r7c0)=0
+.ic v(q_r7c1)=1.8 v(qb_r7c1)=0
+.ic v(q_r7c2)=0 v(qb_r7c2)=1.8
+.ic v(q_r7c3)=1.8 v(qb_r7c3)=0
+.ic v(q_r7c4)=0 v(qb_r7c4)=1.8
+.ic v(q_r7c5)=1.8 v(qb_r7c5)=0
+.ic v(q_r7c6)=0 v(qb_r7c6)=1.8
+.ic v(q_r7c7)=1.8 v(qb_r7c7)=0
+
+.ic v(bl0)=1.8
+.ic v(bl1)=1.8
+.ic v(bl2)=1.8
+.ic v(bl3)=1.8
+.ic v(bl4)=1.8
+.ic v(bl5)=1.8
+.ic v(bl6)=1.8
+.ic v(bl7)=1.8
+
+.tran 0.05n 50n UIC
+
+.meas tran vbl0 FIND v(bl0) AT=40n
+.meas tran vbl1 FIND v(bl1) AT=40n
+.meas tran vbl2 FIND v(bl2) AT=40n
+.meas tran vbl3 FIND v(bl3) AT=40n
+.meas tran vbl4 FIND v(bl4) AT=40n
+.meas tran vbl5 FIND v(bl5) AT=40n
+.meas tran vbl6 FIND v(bl6) AT=40n
+.meas tran vbl7 FIND v(bl7) AT=40n
+
+.save v(bl0) v(bl1) v(bl2) v(bl3) v(bl4) v(bl5) v(bl6) v(bl7) v(wl0) v(wl1) v(wl2) v(wl3) v(wl4) v(wl5) v(wl6) v(wl7) v(pre)
+
+.control
+run
+wrdata spice_bl_results.txt v(bl0) v(bl1) v(bl2) v(bl3) v(bl4) v(bl5) v(bl6) v(bl7)
+.endc
+.end
