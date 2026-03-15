@@ -200,7 +200,7 @@ Combined worst-case PVT conditions (e.g., SF corner at -40°C) show RMSE up to 1
 
 1. **Heavy BL saturation at 64 rows:** With typical 50% weight density and random inputs, most BL voltages cluster near 0V. The ADC would need to resolve very small voltages (0-200 mV range) with 6-bit resolution, requiring ~3 mV LSB. This is challenging but feasible.
 
-2. **Large MIM capacitor area:** 10 pF per column requires ~5000 µm² per column. For 64 columns, that's 320,000 µm² total — about 0.57mm × 0.57mm. This is significant area overhead. *Note: testing showed that even 1 pF (500 µm² per column, 10× smaller) still passes all specs (RMSE=0.52%) due to the accurate nonlinear model. The 10 pF choice is for best ADC dynamic range, not for accuracy.*
+2. **MIM capacitor area:** 10 pF per column requires ~5000 µm² per column (0.57mm² total for 64 cols). An alternative 3 pF design (saves 70% cap area) passes all specs with 97% margin at all corners. With 1 pF (saves 90%), RMSE = 0.52% — still well within spec. The 10 pF choice is for best ADC dynamic range.
 
 3. **Power may increase at 64×64:** Current measurement (0.017 mW at 64×8) scales roughly with number of columns. At 64×64: ~0.14 mW, still well within 5 mW spec.
 
