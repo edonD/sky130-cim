@@ -138,6 +138,8 @@ Worst-case corners:
 
 The tight distributions are because the read port uses minimum width (0.42 um), which gets clamped at the DRC minimum. In a real process, the mismatch would come from Vth variation (Pelgrom model), not just width variation. The Vth mismatch sigma for W=0.42um, L=1.0um is Avt/sqrt(WL) = 5mV*um / sqrt(0.42) = 7.7 mV, which would cause ~1.5% current variation — still well within margins.
 
+![MC Distributions](plots/mc_distributions.png)
+
 ---
 
 ## Cell Metrics for Array Integration
