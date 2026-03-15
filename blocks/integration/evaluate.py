@@ -69,12 +69,16 @@ class CIMTileBehavioral:
     """
 
     def __init__(self, measurements, array_rows=64, array_cols=64,
-                 input_bits=4, output_bits=6):
+                 input_bits=4, output_bits=6, max_input_value=None):
         self.rows = array_rows
         self.cols = array_cols
         self.input_bits = input_bits
         self.output_bits = output_bits
         self.n_codes = 2**output_bits  # 64
+        # max_input_value: the maximum per-row input value used in this operating mode.
+        # For binary inputs: 1. For 4-bit grayscale: 15.
+        # The ADC V_REF is calibrated to this (standard CIM practice).
+        self.max_input_value = max_input_value if max_input_value is not None else (2**input_bits - 1)
 
         # Extract parameters from upstream measurements (with defaults)
         self._extract_params(measurements)
@@ -90,49 +94,63 @@ class CIMTileBehavioral:
         # PWM parameters
         pwm = meas.get("pwm-driver") or {}
         self.t_lsb_ns = pwm.get("t_lsb_ns", 5.0)         # ns per LSB
-        self.pwm_inl_lsb = pwm.get("inl_lsb", 0.3)       # PWM nonlinearity
+        self.pwm_linearity_pct = pwm.get("linearity_pct", 0.3)  # PWM nonlinearity %
+        self.pwm_inl_lsb = self.pwm_linearity_pct / 100.0  # convert to fraction
 
-        # ADC parameters
-        adc = meas.get("adc") or {}
-        self.adc_dnl_lsb = adc.get("dnl_lsb", 0.3)
-        self.adc_inl_lsb = adc.get("inl_lsb", 0.5)
-        self.adc_enob = adc.get("enob", 5.5)
-        self.adc_conv_time_ns = adc.get("conversion_time_ns", 150.0)
-        self.adc_power_uw = adc.get("power_uw", 30.0)
+        # ADC parameters — nested under "measurements" key
+        adc_raw = meas.get("adc") or {}
+        adc = adc_raw.get("measurements", adc_raw)  # handle nested structure
+        self.adc_dnl_lsb = adc.get("RESULT_DNL_LSB", adc.get("dnl_lsb", 0.3))
+        self.adc_inl_lsb = adc.get("RESULT_INL_LSB", adc.get("inl_lsb", 0.5))
+        self.adc_enob = adc.get("RESULT_ENOB", adc.get("enob", 5.5))
+        self.adc_conv_time_ns = adc.get("RESULT_CONVERSION_TIME_NS",
+                                         adc.get("conversion_time_ns", 150.0))
+        self.adc_power_uw = adc.get("RESULT_POWER_UW", adc.get("power_uw", 30.0))
 
         # Array parameters
         arr = meas.get("array") or {}
-        self.array_rmse_pct = arr.get("rmse_pct", 5.0)
-        self.bl_swing_mv = arr.get("bl_swing_mv", 500.0)
-        self.array_power_uw = arr.get("power_uw", 500.0)
+        self.array_rmse_pct = arr.get("mvm_rmse_pct", arr.get("rmse_pct", 5.0))
+        self.bl_swing_mv = arr.get("v_bl_full_scale_8row_mv", 500.0)
+        self.array_power_mw = arr.get("power_mw", 0.5)
+        self.array_power_uw = self.array_power_mw * 1000  # convert mW to uW
 
-        # Derived parameters
-        self.c_bl_total_ff = self.c_bl_cell_ff * self.rows  # total BL cap
-        # Max BL discharge: all rows active at max input
-        max_input = (2**self.input_bits - 1)
-        self.t_max_ns = max_input * self.t_lsb_ns
-        # Charge per cell at max pulse: I_read * T_max
-        self.q_per_cell_max = self.i_read_ua * 1e-6 * self.t_max_ns * 1e-9  # Coulombs
-        # Voltage per cell at max pulse: Q / C_bl_total
+        # Use array's measured total BL capacitance if available (includes extra cap)
+        self.c_bl_total_ff = arr.get("c_bl_total_ff", self.c_bl_cell_ff * self.rows)
+
+        # Voltage step per unit: I_READ * T_LSB / C_BL (for input value = 1)
         c_bl_total_f = self.c_bl_total_ff * 1e-15
+        charge_per_lsb = self.i_read_ua * 1e-6 * self.t_lsb_ns * 1e-9
         if c_bl_total_f > 0:
-            self.dv_per_cell_max_v = self.q_per_cell_max / c_bl_total_f
+            self.v_step_per_unit = charge_per_lsb / c_bl_total_f  # V per unit dot product
         else:
-            self.dv_per_cell_max_v = 0.01  # fallback
+            self.v_step_per_unit = 0.014  # ~14 mV fallback
 
-        # Full-scale voltage swing
         self.v_pre = 1.8  # precharge voltage
-        self.v_fs = min(self.dv_per_cell_max_v * self.rows, self.v_pre)
+        max_input_full = (2**self.input_bits - 1)
+        self.t_max_ns = max_input_full * self.t_lsb_ns
+
+        # ADC reference voltage calibration:
+        # In a real CIM chip, the ADC V_REF is calibrated to the expected signal range.
+        # Max discharge = rows * max_input_value * v_step_per_unit
+        max_discharge = self.rows * self.max_input_value * self.v_step_per_unit
+        # V_FS = min(max_discharge, VDD) — can't exceed supply
+        self.v_fs = min(max_discharge, self.v_pre)
 
         # ADC LSB voltage
         self.v_lsb = self.v_fs / self.n_codes if self.v_fs > 0 else 0.028
+
+        # Gain factor: maps ADC codes back to dot product units
+        # code = dot * v_step / v_lsb, so dot = code * v_lsb / v_step
+        self.adc_gain = self.v_step_per_unit / self.v_lsb
 
         print(f"\n  CIM Tile Behavioral Model Parameters:")
         print(f"    I_READ = {self.i_read_ua:.1f} uA, I_LEAK = {self.i_leak_na:.1f} nA")
         print(f"    T_LSB = {self.t_lsb_ns:.1f} ns, T_MAX = {self.t_max_ns:.1f} ns")
         print(f"    C_BL_total = {self.c_bl_total_ff:.1f} fF")
-        print(f"    dV/cell (max pulse) = {self.dv_per_cell_max_v*1000:.1f} mV")
+        print(f"    V_step/unit = {self.v_step_per_unit*1000:.2f} mV")
+        print(f"    Max input value = {self.max_input_value} (ADC V_REF calibrated to this)")
         print(f"    V_FS = {self.v_fs*1000:.1f} mV, V_LSB = {self.v_lsb*1000:.2f} mV")
+        print(f"    ADC gain = {self.adc_gain:.4f} (code = dot * gain)")
         print(f"    ADC ENOB = {self.adc_enob:.1f} bits")
 
     def mvm(self, weight_matrix, input_vector, add_noise=True):
@@ -231,20 +249,23 @@ class CIMTileBehavioral:
         Uses two's complement approach:
           - Run MVM with w_pos = (W+1)/2 (weights mapped to {0,1})
           - The result encodes: sum(w * x) = 2 * sum(w_pos * x) - sum(x)
-          - Digital post-processing recovers the signed result
+          - Digital post-processing with ADC gain correction recovers signed result
         """
         codes, v_bl = self.mvm(weight_matrix, input_vector, add_noise=add_noise)
 
         # Recover signed result:
-        # code represents sum(w_pos * x) where w_pos = (W+1)/2
-        # signed_result = 2 * code - sum(x)
+        # ADC code ≈ dot * adc_gain where dot = x @ w_pos
+        # So dot ≈ code / adc_gain
+        # signed = 2 * dot - sum(x) = 2 * code / adc_gain - sum(x)
         if np.any(input_vector < 0):
             x_quant = np.clip(np.round((input_vector + 1) / 2 * 15), 0, 15)
         else:
             x_quant = np.clip(np.round(input_vector), 0, 15)
         x_sum = x_quant.sum()
 
-        signed_result = 2.0 * codes.astype(float) - x_sum
+        # Scale codes back to dot product units, then apply signed formula
+        dot_estimated = codes.astype(float) / self.adc_gain
+        signed_result = 2.0 * dot_estimated - x_sum
 
         return signed_result, codes, v_bl
 
@@ -273,16 +294,30 @@ def mnist_inference_behavioral(tile, w1, w2, X_test, y_test, n_images=100):
 
     Layer 1 (784->64) is tiled across multiple MVM passes.
     Layer 2 (64->10) is a single pass.
+
+    Uses binary inputs (0/1) matching training to stay within ADC range.
+    Both inputs and weights are signed ({-1,+1}) mapped to unsigned ({0,1}).
+
+    Signed recovery formula for binary-binary:
+      y = x_real @ W = (2*x_hw-1) @ (2*w_pos-1)
+        = 4*(x_hw @ w_pos) - 2*sum(x_hw) - 2*sum(w_pos) + N_rows
+    The tile computes x_hw @ w_pos via the analog array.
     """
     n_images = min(n_images, len(X_test))
     correct = 0
     predictions = []
 
+    # Precompute w_pos column sums for signed recovery
+    w1_pos = (w1 + 1.0) / 2.0  # {-1,+1} -> {0,1}
+    w2_pos = (w2 + 1.0) / 2.0
+
     for idx in range(n_images):
         x = X_test[idx]  # (784,) float in [0,1]
 
+        # Binarize input: threshold at 0.5, map to {0, 1} for hardware
+        x_binary = (x > 0.5).astype(float)
+
         # --- Layer 1: tiled MVM ---
-        # Split 784-element input into chunks of 64
         chunk_size = 64
         n_chunks = (784 + chunk_size - 1) // chunk_size  # 13 chunks
         accumulated = np.zeros(64, dtype=float)
@@ -290,23 +325,38 @@ def mnist_inference_behavioral(tile, w1, w2, X_test, y_test, n_images=100):
         for c in range(n_chunks):
             start = c * chunk_size
             end = min(start + chunk_size, 784)
-            x_chunk = x[start:end]
+            x_chunk = x_binary[start:end]
             w_chunk = w1[start:end, :]  # (<=64, 64)
+            w_pos_chunk = w1_pos[start:end, :]
+
+            actual_len = len(x_chunk)
 
             # Pad if last chunk is shorter
-            if len(x_chunk) < chunk_size:
+            if actual_len < chunk_size:
                 x_pad = np.zeros(chunk_size)
-                x_pad[:len(x_chunk)] = x_chunk
+                x_pad[:actual_len] = x_chunk
                 w_pad = np.zeros((chunk_size, 64))
                 w_pad[:w_chunk.shape[0], :] = w_chunk
+                wp_pad = np.zeros((chunk_size, 64))
+                wp_pad[:w_pos_chunk.shape[0], :] = w_pos_chunk
                 x_chunk = x_pad
                 w_chunk = w_pad
+                w_pos_chunk = wp_pad
 
-            # Quantize input to 4-bit: map [0,1] -> [0,15]
-            x_4bit = np.clip(np.round(x_chunk * 15), 0, 15)
+            # Run MVM through tile — gets ADC codes proportional to x_hw @ w_pos
+            codes, v_bl = tile.mvm(w_chunk, x_chunk, add_noise=True)
 
-            # Run through tile (unsigned MVM, then correct for signed weights)
-            signed_result, _, _ = tile.mvm_signed(w_chunk, x_4bit, add_noise=True)
+            # Recover dot product estimate from ADC codes
+            dot_est = codes.astype(float) / tile.adc_gain
+
+            # Full signed recovery for binary-binary:
+            # y = 4*dot - 2*sum(x_hw) - 2*sum(w_pos_col) + N_rows
+            # Use actual_len (not chunk_size) to avoid bias from padded rows
+            # Padded rows have x=0, w_pos=0, contributing +1 each if N_rows=64
+            x_sum = x_chunk.sum()
+            wp_col_sums = w_pos_chunk.sum(axis=0)  # (64,)
+            signed_result = 4.0 * dot_est - 2.0 * x_sum - 2.0 * wp_col_sums + actual_len
+
             accumulated += signed_result
 
         # Sign activation
@@ -316,11 +366,18 @@ def mnist_inference_behavioral(tile, w1, w2, X_test, y_test, n_images=100):
         # w2 is (64, 10), pad to (64, 64) for tile
         w2_pad = np.zeros((64, 64))
         w2_pad[:64, :10] = w2
+        w2_pos_pad = np.zeros((64, 64))
+        w2_pos_pad[:64, :10] = w2_pos
 
-        # Hidden layer values are {-1, +1}, map to 4-bit: -1->0, +1->15
-        h_4bit = np.where(hidden > 0, 15.0, 0.0)
+        # Hidden layer values are {-1, +1}, map to hardware: -1->0, +1->1
+        h_hw = np.where(hidden > 0, 1.0, 0.0)
 
-        signed_out, _, _ = tile.mvm_signed(w2_pad, h_4bit, add_noise=True)
+        codes2, v_bl2 = tile.mvm(w2_pad, h_hw, add_noise=True)
+        dot_est2 = codes2.astype(float) / tile.adc_gain
+        h_sum = h_hw.sum()
+        wp2_col_sums = w2_pos_pad.sum(axis=0)
+        signed_out = 4.0 * dot_est2 - 2.0 * h_sum - 2.0 * wp2_col_sums + 64
+
         output = signed_out[:10]  # only first 10 columns matter
 
         pred = np.argmax(output)
@@ -334,11 +391,11 @@ def mnist_inference_behavioral(tile, w1, w2, X_test, y_test, n_images=100):
 def mnist_inference_ideal(w1, w2, X_test, y_test, n_images=100):
     """
     Run MNIST inference with ideal floating-point arithmetic (no hardware effects).
-    This is the upper bound on accuracy.
+    This is the upper bound on accuracy. Uses binary inputs to match hardware.
     """
     n_images = min(n_images, len(X_test))
 
-    # Binarize inputs at 0.5 threshold to match training
+    # Binarize inputs at 0.5 threshold to match training and hardware
     X_bin = np.where(X_test[:n_images] > 0.5, 1.0, -1.0)
 
     z1 = X_bin @ w1           # (n, 64)
@@ -355,24 +412,31 @@ def mnist_inference_ideal(w1, w2, X_test, y_test, n_images=100):
 
 def test_mvm_accuracy(tile, n_tests=50):
     """
-    Test MVM accuracy with random weight matrices and input vectors.
+    Test MVM accuracy with random binary weight matrices and binary input vectors.
+    Uses the same binary-binary signed recovery as MNIST inference.
     Compare tile output to ideal numpy dot product.
     """
     errors = []
 
     for _ in range(n_tests):
-        # Random binary weights
+        # Random binary weights {-1, +1}
         W = np.random.choice([-1, 1], size=(64, 64)).astype(float)
-        # Random 4-bit inputs
-        x = np.random.randint(0, 16, size=64).astype(float)
+        # Random binary inputs {0, 1} for hardware
+        x_hw = np.random.choice([0, 1], size=64).astype(float)
 
-        # Ideal result
+        # Ideal: x_real @ W where x_real = 2*x_hw - 1
+        x_real = 2 * x_hw - 1
+        ideal_signed = x_real @ W  # per column
+
+        # Tile: run MVM with x_hw and W, recover signed result
         w_pos = (W + 1) / 2
-        ideal_dot = x @ w_pos
-        ideal_signed = 2 * ideal_dot - x.sum()
+        codes, v_bl = tile.mvm(W, x_hw, add_noise=True)
+        dot_est = codes.astype(float) / tile.adc_gain
 
-        # Tile result
-        signed_result, _, _ = tile.mvm_signed(W, x, add_noise=True)
+        # Binary-binary signed recovery:
+        # y = 4*dot - 2*sum(x_hw) - 2*sum(w_pos_col) + N_rows
+        wp_col_sums = w_pos.sum(axis=0)
+        signed_result = 4.0 * dot_est - 2.0 * x_hw.sum() - 2.0 * wp_col_sums + 64
 
         # Normalized error
         scale = max(np.abs(ideal_signed).max(), 1.0)
@@ -390,13 +454,15 @@ def test_mvm_accuracy(tile, n_tests=50):
 def estimate_cycle_time(measurements):
     """Estimate total cycle time from upstream measurements."""
     pwm = measurements.get("pwm-driver") or {}
-    adc = measurements.get("adc") or {}
+    adc_raw = measurements.get("adc") or {}
+    adc = adc_raw.get("measurements", adc_raw)
 
     t_precharge = 5.0   # ns (fixed)
     t_lsb = pwm.get("t_lsb_ns", 5.0)
     t_compute = 15 * t_lsb  # worst case: max input value
     t_settle = 20.0     # ns (fixed)
-    t_convert = adc.get("conversion_time_ns", 200.0)
+    t_convert = adc.get("RESULT_CONVERSION_TIME_NS",
+                         adc.get("conversion_time_ns", 200.0))
 
     total = t_precharge + t_compute + t_settle + t_convert
     breakdown = {
@@ -410,16 +476,20 @@ def estimate_cycle_time(measurements):
 
 def estimate_power(measurements):
     """Estimate total tile power from upstream measurements."""
-    adc = measurements.get("adc") or {}
+    adc_raw = measurements.get("adc") or {}
+    adc = adc_raw.get("measurements", adc_raw)
     arr = measurements.get("array") or {}
     pwm = measurements.get("pwm-driver") or {}
 
-    # 64 ADCs
-    adc_power_uw = adc.get("power_uw", 30.0) * 64
-    # Array power (already for full array)
-    array_power_uw = arr.get("power_uw", 500.0)
+    # 64 ADCs — power per ADC from upstream
+    adc_power_per_uw = adc.get("RESULT_POWER_UW", adc.get("power_uw", 30.0))
+    adc_power_uw = adc_power_per_uw * 64
+    # Array power (already for full array, in mW)
+    array_power_mw = arr.get("power_mw", 0.5)
+    array_power_uw = array_power_mw * 1000
     # 64 PWM drivers
-    pwm_power_uw = pwm.get("power_uw", 5.0) * 64
+    pwm_power_per_uw = pwm.get("power_uw", 5.0)
+    pwm_power_uw = pwm_power_per_uw * 64
     # Digital logic overhead (~10% of analog)
     digital_overhead_uw = (adc_power_uw + array_power_uw + pwm_power_uw) * 0.1
 
@@ -546,7 +616,9 @@ def evaluate(n_mnist_images=100, run_spice=False):
 
     # Build behavioral model
     print(f"\nBuilding behavioral CIM tile model...")
-    tile = CIMTileBehavioral(measurements)
+    # Binary input mode: max_input_value=1 for {0,1} encoding
+    # ADC V_REF calibrated to match max discharge (standard CIM practice)
+    tile = CIMTileBehavioral(measurements, max_input_value=1)
 
     # MVM accuracy test
     print(f"\nTesting MVM accuracy (random vectors)...")

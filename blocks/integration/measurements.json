@@ -1,0 +1,23 @@
+{
+  "mnist_accuracy_pct": 88.32,
+  "mvm_accuracy_pct": 94.01019006278985,
+  "cycle_time_ns": 207.97,
+  "total_power_mw": 0.4666727999999999,
+  "ideal_mnist_accuracy_pct": 88.73,
+  "mvm_rmse_pct": 5.989809937210148,
+  "cycle_time_breakdown": {
+    "precharge_ns": 5.0,
+    "compute_ns": 74.97,
+    "settle_ns": 20.0,
+    "convert_ns": 108.0,
+    "total_ns": 207.97
+  },
+  "power_breakdown_mw": {
+    "adc_64x_uw": 0.3287039999999999,
+    "array_uw": 0.011,
+    "pwm_64x_uw": 0.084544,
+    "digital_overhead_uw": 0.04242479999999999,
+    "total_uw": 0.4666727999999999
+  },
+  "score": 100.0
+}

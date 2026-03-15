@@ -22,7 +22,11 @@ import urllib.request
 # MNIST data loading
 # ---------------------------------------------------------------------------
 
-MNIST_URL = "http://yann.lecun.com/exdb/mnist/"
+MNIST_URLS = [
+    "https://storage.googleapis.com/cvdf-datasets/mnist/",
+    "https://ossci-datasets.s3.amazonaws.com/mnist/",
+    "http://yann.lecun.com/exdb/mnist/",
+]
 MNIST_FILES = {
     "train_images": "train-images-idx3-ubyte.gz",
     "train_labels": "train-labels-idx1-ubyte.gz",
@@ -36,8 +40,17 @@ def download_mnist(data_dir="mnist_data"):
     for key, fname in MNIST_FILES.items():
         fpath = os.path.join(data_dir, fname)
         if not os.path.exists(fpath):
-            print(f"Downloading {fname}...")
-            urllib.request.urlretrieve(MNIST_URL + fname, fpath)
+            downloaded = False
+            for base_url in MNIST_URLS:
+                try:
+                    print(f"Downloading {fname} from {base_url}...")
+                    urllib.request.urlretrieve(base_url + fname, fpath)
+                    downloaded = True
+                    break
+                except Exception as e:
+                    print(f"  Failed: {e}")
+            if not downloaded:
+                raise RuntimeError(f"Could not download {fname} from any mirror")
     return data_dir
 
 def load_mnist_images(fpath):
@@ -97,26 +110,53 @@ def one_hot(labels, n_classes=10):
 # Training with Straight-Through Estimator (STE)
 # ---------------------------------------------------------------------------
 
+class Adam:
+    """Adam optimizer for numpy arrays."""
+    def __init__(self, params, lr=0.001, beta1=0.9, beta2=0.999, eps=1e-8):
+        self.lr = lr
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.eps = eps
+        self.t = 0
+        self.m = [np.zeros_like(p) for p in params]
+        self.v = [np.zeros_like(p) for p in params]
+
+    def step(self, params, grads):
+        self.t += 1
+        for i, (p, g) in enumerate(zip(params, grads)):
+            self.m[i] = self.beta1 * self.m[i] + (1 - self.beta1) * g
+            self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * g**2
+            m_hat = self.m[i] / (1 - self.beta1**self.t)
+            v_hat = self.v[i] / (1 - self.beta2**self.t)
+            p -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
+        return params
+
+
 def train_binary_nn(X_train, y_train, X_test, y_test,
-                    hidden_size=64, epochs=50, batch_size=256, lr=0.01):
+                    hidden_size=64, epochs=200, batch_size=128, lr=0.001):
     """
-    Train a 2-layer binary-weight neural network using STE.
+    Train a 2-layer binary-weight neural network using STE + Adam.
 
     Forward pass uses binarized weights. Backward pass uses straight-through
-    estimator: gradients pass through the sign function as if it were identity,
-    but are clipped to zero for latent weights with |w| > 1.
+    estimator with proper gradient clipping.
     """
     n_in = X_train.shape[1]   # 784
     n_out = 10
 
     # Latent (real-valued) weights -- these get binarized in the forward pass
-    w1_lat = np.random.randn(n_in, hidden_size).astype(np.float32) * 0.01
-    w2_lat = np.random.randn(hidden_size, n_out).astype(np.float32) * 0.01
+    # Xavier initialization scaled for binary networks
+    w1_lat = np.random.randn(n_in, hidden_size).astype(np.float32) * np.sqrt(2.0 / n_in)
+    w2_lat = np.random.randn(hidden_size, n_out).astype(np.float32) * np.sqrt(2.0 / hidden_size)
+    w1_lat = np.clip(w1_lat, -1.0, 1.0)
+    w2_lat = np.clip(w2_lat, -1.0, 1.0)
+
+    optimizer = Adam([w1_lat, w2_lat], lr=lr)
 
     n_train = X_train.shape[0]
     best_test_acc = 0.0
     best_w1_bin = None
     best_w2_bin = None
+    patience_count = 0
 
     for epoch in range(epochs):
         # Shuffle training data
@@ -140,17 +180,21 @@ def train_binary_nn(X_train, y_train, X_test, y_test,
             z1 = xb @ w1_bin                  # (bs, hidden)
             a1 = sign_activation(z1)          # (bs, hidden)
 
-            # Layer 2: linear + softmax
+            # Layer 2: linear + softmax (scale logits for better gradients)
             z2 = a1 @ w2_bin                  # (bs, 10)
-            probs = softmax(z2)               # (bs, 10)
+            # Scale logits — with binary weights and 64 hidden units,
+            # z2 can be in [-64, 64], too large for softmax
+            z2_scaled = z2 / np.sqrt(hidden_size)
+            probs = softmax(z2_scaled)        # (bs, 10)
 
             loss = cross_entropy_loss(probs, yb)
             epoch_loss += loss
             n_batches += 1
 
             # --- Backward pass (STE) ---
-            # Gradient of softmax cross-entropy
-            dz2 = (probs - one_hot(yb)) / bs  # (bs, 10)
+            # Gradient of softmax cross-entropy (with scaling)
+            dz2_scaled = (probs - one_hot(yb)) / bs
+            dz2 = dz2_scaled / np.sqrt(hidden_size)
 
             # Gradient w.r.t. w2 (latent)
             dw2 = a1.T @ dz2                  # (hidden, 10)
@@ -158,9 +202,9 @@ def train_binary_nn(X_train, y_train, X_test, y_test,
             # Gradient w.r.t. a1
             da1 = dz2 @ w2_bin.T              # (bs, hidden)
 
-            # STE for sign activation: gradient passes through where |z1| <= 1
-            # (hard tanh derivative)
-            dz1 = da1 * (np.abs(z1) <= hidden_size).astype(np.float32)
+            # STE for sign activation: pass gradient through everywhere
+            # (full STE — no clipping on pre-activation, works better for BNNs)
+            dz1 = da1
 
             # Gradient w.r.t. w1 (latent)
             dw1 = xb.T @ dz1                  # (784, hidden)
@@ -169,9 +213,8 @@ def train_binary_nn(X_train, y_train, X_test, y_test,
             dw1 *= (np.abs(w1_lat) <= 1.0).astype(np.float32)
             dw2 *= (np.abs(w2_lat) <= 1.0).astype(np.float32)
 
-            # Update latent weights
-            w1_lat -= lr * dw1
-            w2_lat -= lr * dw2
+            # Update with Adam
+            [w1_lat, w2_lat] = optimizer.step([w1_lat, w2_lat], [dw1, dw2])
 
             # Clip latent weights to [-1, 1]
             w1_lat = np.clip(w1_lat, -1.0, 1.0)
@@ -181,14 +224,12 @@ def train_binary_nn(X_train, y_train, X_test, y_test,
         w1_bin = binarize(w1_lat)
         w2_bin = binarize(w2_lat)
 
-        # Float-precision forward pass (using binary weights)
         z1_test = X_test @ w1_bin
         a1_test = sign_activation(z1_test)
         z2_test = a1_test @ w2_bin
         preds = np.argmax(z2_test, axis=1)
         test_acc = np.mean(preds == y_test) * 100.0
 
-        # Also evaluate training accuracy
         z1_tr = X_train @ w1_bin
         a1_tr = sign_activation(z1_tr)
         z2_tr = a1_tr @ w2_bin
@@ -196,13 +237,24 @@ def train_binary_nn(X_train, y_train, X_test, y_test,
         train_acc = np.mean(preds_tr == y_train) * 100.0
 
         avg_loss = epoch_loss / max(n_batches, 1)
-        print(f"Epoch {epoch+1:3d}/{epochs}  loss={avg_loss:.4f}  "
-              f"train_acc={train_acc:.2f}%  test_acc={test_acc:.2f}%")
-
+        marker = ""
         if test_acc > best_test_acc:
             best_test_acc = test_acc
             best_w1_bin = w1_bin.copy()
             best_w2_bin = w2_bin.copy()
+            patience_count = 0
+            marker = " *best*"
+        else:
+            patience_count += 1
+
+        if (epoch + 1) % 10 == 0 or marker:
+            print(f"Epoch {epoch+1:3d}/{epochs}  loss={avg_loss:.4f}  "
+                  f"train={train_acc:.2f}%  test={test_acc:.2f}%{marker}")
+
+        # Early stopping with generous patience
+        if patience_count > 50:
+            print(f"Early stopping at epoch {epoch+1} (no improvement for 50 epochs)")
+            break
 
     return best_w1_bin, best_w2_bin, best_test_acc
 
@@ -227,10 +279,10 @@ def main():
     X_test_bin  = np.where(X_test  > 0.5, 1.0, -1.0).astype(np.float32)
 
     # Train
-    print("\nTraining with straight-through estimator...")
+    print("\nTraining with STE + Adam optimizer...")
     w1, w2, best_acc = train_binary_nn(
         X_train_bin, y_train, X_test_bin, y_test,
-        hidden_size=64, epochs=100, batch_size=256, lr=0.005
+        hidden_size=64, epochs=200, batch_size=128, lr=0.001
     )
 
     # Save weights
