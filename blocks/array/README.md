@@ -109,6 +109,18 @@ The 10 pF capacitor would be implemented as a MIM (metal-insulator-metal) capaci
 
 The BL settles almost instantly after WL drops because the charge is stored on the capacitor. There is no resistive path to discharge after the read transistors turn off.
 
+### Error Budget (estimated system-level)
+
+| Source | Contribution | Notes |
+|--------|-------------|-------|
+| Array MVM | 0.097% | SPICE vs calibrated model |
+| PWM jitter | 0.126% | Assumed 0.1ns rms, 64 cells |
+| ADC quantization | 0.226% | 6-bit, ±0.5 LSB |
+| Bitcell mismatch | 0.354% | Assumed 2%/cell, 32 active |
+| **Total RSS** | **0.449%** | **Margin: 95.5% to 10% spec** |
+
+The array contributes only 22% of the total error budget. Bitcell mismatch and ADC quantization dominate — the array is not the system bottleneck.
+
 **Pipelining opportunity:** The precharge of the NEXT cycle can overlap with the ADC conversion of the current cycle, since the ADC samples BL at the start of conversion. This reduces effective cycle time from 295ns to 275ns (~3.6 MHz throughput).
 
 ### Design Space
