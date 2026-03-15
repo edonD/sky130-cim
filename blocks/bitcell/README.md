@@ -168,6 +168,26 @@ The tight distributions are because the read port uses minimum width (0.42 um), 
 
 ---
 
+## System-Level Analysis
+
+**For 64-cell column (CIM dot product):**
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| I_read per cell | 28.4 uA | At nominal |
+| Total current (all 64 active) | 1.82 mA | Maximum case |
+| Single-cell LSB discharge (1ns, 100fF BL) | 284 mV | Very large step |
+| Leakage error (64 cells, 75ns) | 96 uV | Negligible (< 0.001 LSB) |
+
+**Key concern for array integration**: The 28.4 uA read current gives a very large BL discharge per cell. The array block must:
+1. Use sufficient BL capacitance (likely 500 fF - 2 pF) to keep the voltage step per cell in the 5-50 mV range
+2. Account for current reduction as BL voltage drops (nonlinear effect)
+3. The ADC input range must match the actual BL discharge range
+
+**Leakage is negligible**: Even at worst PVT corner (0.31 nA at sf/175C/1.98V), 64 cells produce only 20 nA of leakage, causing < 1 uV error on a 100 fF bitline during a 75ns pulse. This is far below any ADC resolution.
+
+---
+
 ## Known Limitations
 
 1. **BL is modeled as voltage source**: The testbench uses a DC voltage source for BL, which provides infinite charge. In a real array, BL would discharge during read, and the read current would decrease as V_BL drops. The array block must account for this.
