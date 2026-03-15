@@ -106,6 +106,15 @@ Left: Scatter plot of CIM tile MVM output vs ideal (numpy). Points cluster tight
 ### Specs Summary
 ![Integration Results](plots/integration_results.png)
 
+### Learned Weight Visualization
+![Weight Filters](plots/weight_visualization.png)
+
+Layer 1 binary weight filters visualized as 28x28 images. Blue=+1, red=-1. The network learns edge detectors, stroke patterns, and digit-specific templates despite having only binary weights.
+
+![Layer 2 Weights](plots/weight_matrix_l2.png)
+
+Layer 2 weight matrix maps 64 hidden units to 10 digit classes. Each row shows which hidden units vote for that digit class.
+
 ## BNN Training Details
 
 - **Architecture:** 784 -> 64 (sign) -> 10 (argmax)
