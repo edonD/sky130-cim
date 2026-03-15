@@ -21,42 +21,42 @@
     "RESULT_I_12": -2.86623e-05,
     "RESULT_I_15": -2.86623e-05,
     "RESULT_I_20": -2.86623e-05,
-    "RESULT_I_READ_UA": 10.190800000000001,
+    "RESULT_I_READ_UA": 9.65124,
     "RESULT_STORAGE_OK": 1,
     "RESULT_READ_DISTURB_OK": 1,
     "RESULT_T_READ_NS": 0.5,
     "corner": "tt",
     "temperature": 24,
     "supply_v": 1.8,
-    "RESULT_I_LEAK_NA": 0.06710429999999999,
-    "RESULT_SNM_MV": 518.9406989973197,
-    "RESULT_ON_OFF_RATIO": 226827.63821868505
+    "RESULT_I_LEAK_NA": 0.305844,
+    "RESULT_SNM_MV": 437.21840753636735,
+    "RESULT_ON_OFF_RATIO": 69861.0072408576
   },
   "score": 1.0,
   "details": {
     "i_read_ua": {
-      "measured": 10.190800000000001,
+      "measured": 9.65124,
       "target": ">5",
       "met": true,
       "score": 1.0,
       "unit": "\u00b5A"
     },
     "i_leak_na": {
-      "measured": 0.06710429999999999,
+      "measured": 0.305844,
       "target": "<100",
       "met": true,
       "score": 1.0,
       "unit": "nA"
     },
     "on_off_ratio": {
-      "measured": 226827.63821868505,
+      "measured": 69861.0072408576,
       "target": ">100",
       "met": true,
       "score": 1.0,
       "unit": ""
     },
     "snm_mv": {
-      "measured": 518.9406989973197,
+      "measured": 437.21840753636735,
       "target": ">100",
       "met": "True",
       "score": 1.0,
@@ -71,27 +71,27 @@
     }
   },
   "parameters": {
-    "Wp": 0.55,
-    "Lp": 0.15,
-    "Wn": 0.84,
     "Ln": 0.15,
+    "Lp": 0.15,
+    "Lrd": 1.0,
     "Wax": 0.42,
-    "Wrd": 0.42,
-    "Lrd": 1.0
+    "Wn": 0.84,
+    "Wp": 0.55,
+    "Wrd": 0.42
   },
   "pvt": {
-    "worst_i_read_ua": 10.190800000000001,
-    "worst_i_leak_na": 0.06710429999999999,
-    "worst_on_off_ratio": 226827.63821868505,
+    "worst_i_read_ua": 9.65124,
+    "worst_i_leak_na": 0.305844,
+    "worst_on_off_ratio": 69861.0072408576,
     "worst_t_read_ns": 0.5,
     "all_pass": true
   },
   "monte_carlo": {
-    "i_read_mean_ua": 28.514903333333336,
-    "i_read_worst_ua": 25.87938687824811,
-    "i_leak_mean_na": 0.0018884526666666666,
-    "i_leak_worst_na": 0.0018968950707081704,
-    "on_off_worst": 13643025.003268378,
+    "i_read_mean_ua": 28.639222499999995,
+    "i_read_worst_ua": 26.136696248602032,
+    "i_leak_mean_na": 0.00188850255,
+    "i_leak_worst_na": 0.0018991376952364027,
+    "on_off_worst": 13762401.9122787,
     "all_pass": "True"
   }
 }
