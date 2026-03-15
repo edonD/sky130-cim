@@ -185,6 +185,16 @@ Digits 5 and 8 are weakest — these have the most confusable shapes, typical fo
 - **"Is the cycle time achievable?"** — 208 ns = 5+75+20+108 ns. Each phase is physically justified: precharge is fast (large PMOS), compute limited by PWM max pulse, ADC at 6 cycles x 18 ns/cycle.
 - **"Are upstream measurements consistent?"** — Bitcell I_READ (28.4 uA) x T_LSB (5 ns) / C_BL (10 pF) = 14.16 mV/cell. Array reports 14.1 mV/cell. Consistent within 0.4%.
 
+## System Summary
+![System Summary](plots/system_summary.png)
+
+### System Throughput
+- **Inference time:** 2.9 us per image (14 MVM passes x 208 ns/pass)
+- **Throughput:** 343k images/sec
+- **Energy per inference:** 1.36 pJ
+- **Peak compute:** 19.7 GOPS (14 passes x 64x64 MACs x 343k images/sec)
+- **Energy efficiency:** 42.3 TOPS/W
+
 ## Experiment History
 
 | Step | Score | Specs Met | Notes |
