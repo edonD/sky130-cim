@@ -1,8 +1,8 @@
 {
-  "mvm_rmse_pct": 0.19763395067576742,
-  "max_error_pct": 0.4873674275733449,
-  "compute_time_ns": 94.97,
-  "power_mw": 0.001435047192,
+  "mvm_rmse_pct": 0.09872584717908736,
+  "max_error_pct": 0.1555711112632648,
+  "compute_time_ns": 76.97,
+  "power_mw": 0.01688443056,
   "n_tests": 5,
-  "array_size": "8x8"
+  "array_size": "64x8"
 }

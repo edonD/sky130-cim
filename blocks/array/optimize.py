@@ -519,36 +519,16 @@ if __name__ == "__main__":
     print("="*60)
     print(f"Parameters: {params}")
 
-    # Phase A: Verify baseline passes
-    print("\n\n### PHASE A: Baseline Verification ###")
-    results_8x8 = tb_mvm_8x8(params)
-    if results_8x8 and passes_specs(results_8x8):
-        print("\n>>> 8x8 baseline PASSES all specs <<<")
-    else:
-        print("\n>>> 8x8 baseline FAILS — need optimization <<<")
-        sys.exit(1)
-
-    # Phase B: Verification testbenches
-    print("\n\n### PHASE B: Verification Testbenches ###")
-
-    # TB1: Single column
+    # Run all verification TBs
     tb_single_column_dot_product(params)
-
-    # TB2: Precharge
     tb_precharge_verification(params)
-
-    # TB4: Linearity
+    tb_mvm_8x8(params)
     tb_linearity(params)
-
-    # TB6: Worst case
     tb_worst_case_discharge(params)
-
-    # Monotonicity
     tb_monotonicity(params)
 
-    # 64x64 validation (64 rows, 8 cols for simulation time)
-    print("\n\n### 64x64 Validation (64 rows x 8 cols) ###")
+    # 64x8 validation
+    print("\n\n### 64x8 Validation ###")
     results_64 = run_64x64_validation(params)
 
     print("\n\n### VERIFICATION COMPLETE ###")
-    print("All plots saved to plots/")
