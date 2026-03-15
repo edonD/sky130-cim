@@ -93,5 +93,6 @@
     "i_leak_worst_na": 0.0018991376952364027,
     "on_off_worst": 13762401.9122787,
     "all_pass": "True"
-  }
+  },
+  "c_bl_cell_ff": 0.146
 }

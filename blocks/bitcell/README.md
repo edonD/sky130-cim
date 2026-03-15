@@ -152,7 +152,7 @@ The tight distributions are because the read port uses minimum width (0.42 um), 
 | SNM | 557 mV | Robust data retention |
 | T_READ | 0.5 ns | Fast read access |
 | Cell Area (W*L) | ~1.2 um^2 | 8 transistors total |
-| C_BL_CELL | ~0.5 fF | Estimated from Wrd*Lrd |
+| C_BL_CELL | 0.146 fF | Measured via AC analysis (device cap only, no wire parasitics) |
 
 ---
 
