@@ -109,6 +109,8 @@ The 10 pF capacitor would be implemented as a MIM (metal-insulator-metal) capaci
 
 The BL settles almost instantly after WL drops because the charge is stored on the capacitor. There is no resistive path to discharge after the read transistors turn off.
 
+**Pipelining opportunity:** The precharge of the NEXT cycle can overlap with the ADC conversion of the current cycle, since the ADC samples BL at the start of conversion. This reduces effective cycle time from 295ns to 275ns (~3.6 MHz throughput).
+
 ### Design Space
 ![Design Space](plots/design_space.png)
 RMSE vs C_BL extra capacitance at 64×8 for TT and SF (worst) corners. All points pass the 10% spec by a large margin. Even 1pF at the worst corner achieves 0.59% RMSE. The current design (10 pF) prioritizes ADC dynamic range over minimum area.
