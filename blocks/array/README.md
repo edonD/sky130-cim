@@ -179,6 +179,19 @@ With temperature-specific I_READ curves, accuracy improves dramatically:
 
 This confirms the circuit computes correctly at all temperatures — the apparent error was in the ideal model, not the circuit.
 
+## PVT Calibration Requirement
+
+Combined worst-case PVT conditions (e.g., SF corner at -40°C) show RMSE up to 15% with a fixed TT ideal model, because the read current varies 2× across the PVT space:
+
+| Condition | I_READ at VDD | RMSE (TT model) | RMSE (calibrated) |
+|-----------|---------------|------------------|--------------------|
+| TT/27°C | 28.36 µA | 0.06% | 0.06% |
+| SS/125°C | ~15 µA | 10.0% | < 0.2% |
+| FF/-40°C | ~48 µA | 13.8% | < 0.2% |
+| SF/-40°C | ~49 µA | 14.7% | < 0.2% |
+
+**Implication:** A production CIM system requires a one-time calibration step to measure the actual I_READ at the operating PVT point. This is standard practice in analog CIM — the ADC reference levels are calibrated to match the actual BL voltage swing. With calibration, accuracy is consistently sub-0.2%.
+
 ## Known Limitations
 
 1. **Heavy BL saturation at 64 rows:** With typical 50% weight density and random inputs, most BL voltages cluster near 0V. The ADC would need to resolve very small voltages (0-200 mV range) with 6-bit resolution, requiring ~3 mV LSB. This is challenging but feasible.
