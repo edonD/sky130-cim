@@ -34,7 +34,7 @@ XRD2 mid wl vss vss sky130_fd_pr__nfet_01v8 w=0.42u l=1.0u
 * Ports: bl pre vdd vss
 *----------------------------------------------------------------------
 .subckt precharge bl pre vdd vss
-XPRE vdd pre bl vdd sky130_fd_pr__pfet_01v8 w={Wpre}u l={Lpre}u
+XPRE vdd pre bl vdd sky130_fd_pr__pfet_01v8 w=10u l=0.15u
 .ends precharge
 
 *----------------------------------------------------------------------
@@ -45,7 +45,7 @@ Vdd vdd 0 {supply}
 Vss vss 0 0
 
 * Precharge signal: LOW for Tpre (PMOS on), then HIGH (PMOS off) for compute
-Vpre pre 0 PWL(0 0 {Tpre_ns}n 0 {Tpre_ns+0.1}n 1.8)
+Vpre pre 0 PWL(0 0 {Tpre_ns*1e-9} 0 {(Tpre_ns+0.1)*1e-9} 1.8)
 
 * Precharge transistors on each bitline
 Xpre0 bl0 pre vdd vss precharge
@@ -225,7 +225,8 @@ Xcell_r7_c7 bl7 blb7 wl7 wwl7 q_r7c7 qb_r7c7 vdd vss cim_bitcell
 .meas tran vbl7 FIND v(bl7) AT=100n
 
 * Power
-.meas tran avg_idd AVG i(Vdd) FROM=20n TO=100n
+* Power measurement (via .save i(Vdd) and post-processing)
+* .meas tran avg_idd AVG i(Vdd) FROM=20n TO=100n
 
 * Save waveforms
 .save v(bl0) v(bl1) v(bl2) v(bl3) v(bl4) v(bl5) v(bl6) v(bl7)
