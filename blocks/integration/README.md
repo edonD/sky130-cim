@@ -132,6 +132,44 @@ Layer 1 (784->64) is split into 13 chunks of up to 64 rows. Partial results are 
 3. **Simple signed recovery (2*code - x_sum):** Only correct for unsigned inputs x signed weights. For signed-signed (BNN), the full 4-term formula is required.
 4. **SGD optimizer for BNN training:** Unstable, oscillating accuracy (~83% best). Adam + proper STE gave stable 88.7%.
 
+## Phase B: Deep Verification Results
+
+### SPICE vs Behavioral Model Validation
+![SPICE vs Behavioral](plots/spice_vs_behavioral.png)
+
+5 random 8x8 MVM operations compared between full transistor-level SPICE and the behavioral model:
+- **SPICE vs Behavioral RMSE: 0.69 mV** (1.0% normalized)
+- The behavioral model matches SPICE to within one ADC LSB (14.16 mV)
+- Systematic offset of ~0.7 mV from transistor-level non-idealities (channel length modulation)
+
+### Accuracy Stability (10 runs)
+![Accuracy Stability](plots/accuracy_stability.png)
+
+- **Mean: 87.1% ± 0.24%** across 10 independent runs with random noise
+- All runs above 86.6% — robust margin above 85% target
+- The low variance confirms the system is not sensitive to noise realization
+
+### Per-Digit Accuracy
+![Per-Digit Accuracy](plots/per_digit_accuracy.png)
+
+| Digit | CIM Tile | Ideal | Drop |
+|-------|----------|-------|------|
+| 0 | 95.3% | 95.3% | 0.0% |
+| 1 | 96.8% | 96.8% | 0.0% |
+| 2 | 87.1% | 87.1% | 0.0% |
+| 3 | 84.1% | 83.2% | -0.9% |
+| 5 | 78.2% | 80.5% | +2.3% |
+| 8 | 78.7% | 82.0% | +3.4% |
+
+Digits 5 and 8 are weakest — these have the most confusable shapes, typical for BNNs with only 64 hidden units.
+
+### Error Budget
+![Error Budget](plots/error_budget.png)
+
+- **Quantization error: 0.00** — ADC gain = 1.0 means integer dot products map exactly to codes
+- **Noise error: 2.80** (mean absolute, across 64 hidden units)
+- The system is quantization-free by design — all error is from analog noise
+
 ## Known Limitations
 
 1. **Binary inputs only:** The current design requires binary input encoding. Multi-bit (4-bit) inputs would need either 4x larger C_BL (~40 pF, area-expensive) or shorter T_LSB (~1 ns, challenging for PWM).
@@ -157,3 +195,5 @@ Layer 1 (784->64) is split into 13 chunks of up to 64 rows. Partial results are 
 | 4 | 49.3 | 2/4 | Fixed signed recovery to 4-term formula. Padding bug discovered |
 | 5 | 100.0 | 4/4 | Fixed padding bias in last chunk. All specs pass! |
 | 6 | 100.0 | 4/4 | Full 10K eval: 88.3% MNIST, 94.0% MVM |
+| 7 | 100.0 | 4/4 | SPICE validation: 0.69mV RMSE (1.0% normalized) |
+| 8 | 100.0 | 4/4 | Phase B: 10-run stability 87.1%±0.24%, error budget analysis |
