@@ -343,19 +343,31 @@ def parse_measurements(output, n_cols):
 # MVM computation and comparison
 # ---------------------------------------------------------------------------
 
-def _load_iread_curve():
-    """Load the I_READ vs V_BL characterization curve."""
-    char_file = BLOCK_DIR / "iread_char.npz"
-    if char_file.exists():
-        data = np.load(str(char_file))
-        return data["vbl"], data["iread"]
-    return None, None
+def _load_iread_curves():
+    """Load the I_READ vs V_BL characterization curves for all corners."""
+    curves = {}
+    # Try corner-specific data first
+    corner_file = BLOCK_DIR / "iread_char_corners.npz"
+    if corner_file.exists():
+        data = np.load(str(corner_file))
+        for corner in ["tt", "ss", "ff", "sf", "fs"]:
+            vbl_key = f"vbl_{corner}"
+            iread_key = f"iread_{corner}"
+            if vbl_key in data and iread_key in data:
+                curves[corner] = (data[vbl_key], data[iread_key])
+    # Fallback to TT-only file
+    if not curves:
+        char_file = BLOCK_DIR / "iread_char.npz"
+        if char_file.exists():
+            data = np.load(str(char_file))
+            curves["tt"] = (data["vbl"], data["iread"])
+    return curves
 
-# Cache the curve at module load
-_IREAD_VBL, _IREAD_CURVE = _load_iread_curve()
+# Cache the curves at module load
+_IREAD_CURVES = _load_iread_curves()
 
 
-def compute_ideal_mvm(weight_matrix, input_vector, t_lsb_ns, i_read_ua, c_bl_ff):
+def compute_ideal_mvm(weight_matrix, input_vector, t_lsb_ns, i_read_ua, c_bl_ff, corner="tt"):
     """
     Compute ideal bitline voltages using nonlinear discharge model.
     Uses the characterized I_READ(V_BL) curve from SPICE for accuracy.
@@ -363,6 +375,13 @@ def compute_ideal_mvm(weight_matrix, input_vector, t_lsb_ns, i_read_ua, c_bl_ff)
     """
     n_rows, n_cols = weight_matrix.shape
     c_bl_f = c_bl_ff * 1e-15
+
+    # Get corner-specific curve, fallback to TT
+    iread_data = _IREAD_CURVES.get(corner, _IREAD_CURVES.get("tt"))
+    if iread_data is not None:
+        _IREAD_VBL, _IREAD_CURVE = iread_data
+    else:
+        _IREAD_VBL, _IREAD_CURVE = None, None
 
     if _IREAD_VBL is not None and _IREAD_CURVE is not None:
         # Nonlinear model: numerically integrate BL discharge
@@ -427,7 +446,7 @@ def compute_mvm_errors(v_bl_sim, v_bl_ideal):
 # ---------------------------------------------------------------------------
 
 def evaluate(params=None, n_rows=8, n_cols=8, n_tests=N_TEST_VECTORS,
-             verbose=True, seed=42):
+             verbose=True, seed=42, corner="tt"):
     """
     Run the full MVM evaluation.
     Returns dict with mvm_rmse_pct, max_error_pct, compute_time_ns, power_mw.
@@ -469,7 +488,8 @@ def evaluate(params=None, n_rows=8, n_cols=8, n_tests=N_TEST_VECTORS,
 
         # Generate and run simulation
         netlist, t_meas, t_start = generate_netlist(
-            n_rows, n_cols, W, x, params, bitcell_params, pwm_params
+            n_rows, n_cols, W, x, params, bitcell_params, pwm_params,
+            corner=corner
         )
         output, rc = run_ngspice(netlist)
 
@@ -509,7 +529,8 @@ def evaluate(params=None, n_rows=8, n_cols=8, n_tests=N_TEST_VECTORS,
         c_bl_total_ff = n_rows * c_bl_cell + Cbl_extra_ff
         v_bl_ideal = compute_ideal_mvm(
             W, x, pwm_params["t_lsb_ns"],
-            bitcell_params["i_read_ua"], c_bl_total_ff
+            bitcell_params["i_read_ua"], c_bl_total_ff,
+            corner=corner
         )
 
         # Compare

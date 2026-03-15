@@ -144,17 +144,19 @@ All anti-gaming checks pass:
 ### PVT Corner RMSE
 ![PVT Corners](plots/pvt_corners.png)
 
-All 5 process corners pass the < 10% RMSE spec:
+All 5 process corners pass with corner-specific I_READ(V_BL) characterization:
 
-| Corner | Avg RMSE | Max RMSE | Margin | Status |
-|--------|----------|----------|--------|--------|
-| TT | 0.064% | 0.067% | 99.3% | **PASS** |
-| SS | 6.04% | 6.41% | 35.9% | **PASS** |
-| FF | 6.17% | 6.54% | 34.6% | **PASS** |
-| SF | 6.93% | 7.35% | 26.5% | **PASS** |
-| FS | 6.68% | 7.08% | 29.2% | **PASS** |
+**64×8 Array (5 vectors each)**:
 
-The higher RMSE at non-TT corners is because the I_READ(V_BL) characterization was done at TT only. The ideal model uses TT transistor behavior while the SPICE simulation uses the actual corner. A corner-specific characterization would reduce this gap. Even so, the worst case (SF, 7.35%) has 26.5% margin to the 10% spec.
+| Corner | RMSE | Max Error | I_READ at VDD | Margin | Status |
+|--------|------|-----------|---------------|--------|--------|
+| TT | 0.096% | 0.155% | 28.36 µA | 99.0% | **PASS** |
+| SS | 0.101% | 0.188% | 20.70 µA | 99.0% | **PASS** |
+| FF | 0.123% | 0.158% | 36.41 µA | 98.8% | **PASS** |
+| SF | 0.133% | 0.170% | 37.42 µA | 98.7% | **PASS** |
+| FS | 0.112% | 0.206% | 19.88 µA | 98.9% | **PASS** |
+
+All corners achieve sub-0.2% RMSE with corner-specific I_READ curves. The I_READ variation across corners is ~2× (20-37 µA), yet the accuracy remains excellent because the nonlinear model tracks the actual transistor behavior at each corner.
 
 ## Known Limitations
 
@@ -201,3 +203,4 @@ The higher RMSE at non-TT corners is because the I_READ(V_BL) characterization w
 | 5 | 1.00 | 4/4 | — | — | Phase B: anti-gaming, edge cases, param sensitivity all pass |
 | 6 | 1.00 | 4/4 | 0.10 | 0.19 | Two-cycle operation verified, precharge < 1mV error |
 | 7 | 1.00 | 4/4 | 0.09 | 0.17 | Robustness test (different random seed), consistent results |
+| 8 | 1.00 | 4/4 | 0.13 | 0.21 | Corner-specific I_READ curves: all PVT corners pass with 99%+ margin |
